@@ -6,7 +6,7 @@ server:
     enabled: ${DEV_HTTPS:true}
     key-store: file:./config/local-dev.p12
     key-store-type: PKCS12
-    key-store-password: changeit   # localhost 전용 인증서라 비밀이 아니다
+    key-store-password: ${DEV_KEYSTORE_PASSWORD:changeit}
     key-alias: bastionpay-local
 
 spring:

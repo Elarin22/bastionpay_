@@ -5,7 +5,7 @@ filebeat.inputs:
   - type: filestream
     id: bastionpay-security-events
     paths:
-      - ${PWD}/logs/security-events.jsonl
+      - ${BASTIONPAY_LOG_PATH}
     # 기본 파일 식별(핑거프린트)은 파일이 1KB 가 될 때까지 읽지 않는다. 이벤트가 적은 새 파일도 바로 읽도록 inode 로 식별한다
     prospector.scanner.fingerprint.enabled: false
     file_identity.native: ~
@@ -31,7 +31,7 @@ processors:
       ignore_failure: true
 
 output.logstash:                   # Graylog Beats 입력은 logstash(lumberjack) 프로토콜을 쓴다
-  hosts: ["192.168.3.16:5044"]
+  hosts: ["${GRAYLOG_BEATS_ADDRESS:127.0.0.1:5044}"]
   ssl.enabled: false               # 입력의 TLS 가 꺼져 있다(개발용 내부망)
 
 logging.level: info

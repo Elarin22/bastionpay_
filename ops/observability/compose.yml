@@ -1,0 +1,50 @@
+name: bastionpay-observability
+services:
+  mongodb:
+    image: mongo:7.0
+    volumes: [mongo-data:/data/db]
+  opensearch:
+    image: opensearchproject/opensearch:2.15.0
+    environment:
+      discovery.type: single-node
+      DISABLE_INSTALL_DEMO_CONFIG: 'true'
+      DISABLE_SECURITY_PLUGIN: 'true'
+      OPENSEARCH_JAVA_OPTS: '-Xms1g -Xmx1g'
+    volumes: [opensearch-data:/usr/share/opensearch/data]
+  graylog:
+    image: graylog/graylog:6.1.16
+    environment:
+      GRAYLOG_PASSWORD_SECRET: ${GRAYLOG_PASSWORD_SECRET:?Generate lab environment first}
+      GRAYLOG_ROOT_PASSWORD_SHA2: ${GRAYLOG_ROOT_PASSWORD_SHA2:?Generate lab environment first}
+      GRAYLOG_HTTP_BIND_ADDRESS: '0.0.0.0:9000'
+      GRAYLOG_HTTP_EXTERNAL_URI: 'http://localhost:9000/'
+      GRAYLOG_MONGODB_URI: 'mongodb://mongodb:27017/graylog'
+      GRAYLOG_ELASTICSEARCH_HOSTS: 'http://opensearch:9200'
+    depends_on: [mongodb, opensearch]
+    ports:
+      - '127.0.0.1:9000:9000/tcp'
+      - '127.0.0.1:5044:5044/tcp'
+    volumes: [graylog-data:/usr/share/graylog/data]
+    networks: [default, integration]
+  n8n:
+    image: ${N8N_IMAGE:-docker.n8n.io/n8nio/n8n:latest}
+    environment:
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?Generate lab environment first}
+      WEBHOOK_URL: 'http://localhost:5678/'
+      N8N_DIAGNOSTICS_ENABLED: 'false'
+      NODE_EXTRA_CA_CERTS: '/lab/bastionpay-ca.pem'
+      GENERIC_TIMEZONE: 'Asia/Seoul'
+    ports:
+      - '127.0.0.1:5678:5678/tcp'
+    volumes:
+      - n8n-data:/home/node/.n8n
+      - ../../.local/bastionpay-ca.pem:/lab/bastionpay-ca.pem:ro
+    networks: [integration]
+networks:
+  integration:
+    name: bastionpay-lab
+volumes:
+  mongo-data:
+  opensearch-data:
+  graylog-data:
+  n8n-data:

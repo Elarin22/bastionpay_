@@ -1,5 +1,5 @@
 {
-  "name": "BastionPay - Security Alert Intake",
+  "name": "BastionPay - Personal Lab",
   "nodes": [
     {
       "parameters": {
@@ -22,8 +22,7 @@
         560
       ],
       "id": "0bd60999-3698-496b-bdbc-720be2446a2d",
-      "name": "Webhook(Graylog)",
-      "webhookId": "s1000001-2222-4a11-8a11-000000000002"
+      "name": "Webhook(Graylog)"
     },
     {
       "parameters": {
@@ -51,7 +50,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://192.168.3.16/api/admin/incident",
+        "url": "https://host.docker.internal:8080/api/admin/incident",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -76,7 +75,6 @@
           ]
         },
         "options": {
-          "allowUnauthorizedCerts": true,
           "timeout": 10000
         }
       },
@@ -87,13 +85,7 @@
         512
       ],
       "id": "6ee63703-896e-49df-a177-0e735de3d37d",
-      "name": "인시던트 티켓 생성",
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "kR7IpsAxetj9mOJN",
-          "name": "Header Auth account"
-        }
-      }
+      "name": "인시던트 티켓 생성"
     },
     {
       "parameters": {
@@ -107,7 +99,8 @@
             }
           },
           "responseData": "{\"accepted\":true}"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
@@ -116,8 +109,7 @@
         784
       ],
       "id": "1ebfa554-436d-4dff-8759-8cc9fc4051cf",
-      "name": "Webhook(Wazuh)",
-      "webhookId": "s1000001-2222-4a11-8a11-000000000002"
+      "name": "Webhook(Wazuh)"
     },
     {
       "parameters": {
@@ -363,7 +355,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const KNOWN_EVENT_TYPES = new Set([\n  'LOGIN_FAILURE', 'ACCOUNT_LOCKED',\n  'TRANSFER_REFUNDED', 'TRANSFER_REPLAY', 'TRANSFER_FAILED',\n  'TRANSFER_REQUESTED', 'IP_BLOCKED_REQUEST', 'API_AUTH_FAILED',\n  'AUTHENTICATION_REQUIRED', 'TIER_CHANGED',\n  'ACCESS_DENIED',\n  'IDS_ALERT', 'ids-alert',\n  'SNORT_PORTSCAN', 'snort-portscan',\n]);\nconst INFO_EVENT_TYPES = new Set(['LOGIN_SUCCESS', 'TRANSFER_COMPLETED']);\nconst POST_BLOCK_LOGIN_RULE = '100280';\nconst POST_BLOCK_TRANSFER_RULE = '100281';\n\nconst isIp = value => {\n  if (typeof value !== 'string') return false;\n  const ipv4 = value.match(/^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})$/);\n  if (ipv4) return ipv4.slice(1).every(part => Number(part) >= 0 && Number(part) <= 255);\n  return /^[0-9a-f:]+$/i.test(value) && value.includes(':');\n};\n\nreturn $input.all()\n  .filter(item => !['ROLE_REVOKED'].includes(item.json.event_type))\n  .filter(item => {\n    const type = item.json.event_type;\n    const ruleId = String(item.json.wazuh_rule_id || '');\n    // 일반 성공 로그는 티켓 흐름에서 제외 (차단 IP 연계 Wazuh 룰일 때만 허용)\n    if (type === 'LOGIN_SUCCESS') return ruleId === POST_BLOCK_LOGIN_RULE;\n    if (type === 'TRANSFER_COMPLETED') return false;\n    return true;\n  })\n  .map(item => {\n    let ip = item.json.src_ip;\n    const type = item.json.event_type;\n    const ruleId = String(item.json.wazuh_rule_id || '');\n\n    // 파일 변조 등 네트워크 IP가 없는 호스트 내부 사건은 웹 서버 자체 IP로 자동 보정\n    if ((!ip || ip === '없음') && ruleId) {\n      ip = '192.168.3.16';\n    }\n\n    // 앞단에서 넘어온 심각도를 그대로 사용 (혹시 붙었을지 모를 '=' 제거 및 공백 정리)\n    const severity = String(item.json.severity || '').replace(/^=/, '').trim().toUpperCase() || 'LOW';\n\n    const knownWazuhCorrelation = [POST_BLOCK_LOGIN_RULE, POST_BLOCK_TRANSFER_RULE].includes(ruleId);\n    const valid = isIp(ip) && (KNOWN_EVENT_TYPES.has(type) || knownWazuhCorrelation || Boolean(ruleId));\n    return { json: { ...item.json, src_ip: ip, severity, valid } };\n  });"
+        "jsCode": "const KNOWN_EVENT_TYPES = new Set([\n  'LOGIN_FAILURE', 'ACCOUNT_LOCKED',\n  'TRANSFER_REFUNDED', 'TRANSFER_REPLAY', 'TRANSFER_FAILED',\n  'TRANSFER_REQUESTED', 'IP_BLOCKED_REQUEST', 'API_AUTH_FAILED',\n  'AUTHENTICATION_REQUIRED', 'TIER_CHANGED',\n  'ACCESS_DENIED',\n  'IDS_ALERT', 'ids-alert',\n  'SNORT_PORTSCAN', 'snort-portscan',\n]);\nconst INFO_EVENT_TYPES = new Set(['LOGIN_SUCCESS', 'TRANSFER_COMPLETED']);\nconst POST_BLOCK_LOGIN_RULE = '100280';\nconst POST_BLOCK_TRANSFER_RULE = '100281';\n\nconst isIp = value => {\n  if (typeof value !== 'string') return false;\n  const ipv4 = value.match(/^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})$/);\n  if (ipv4) return ipv4.slice(1).every(part => Number(part) >= 0 && Number(part) <= 255);\n  return /^[0-9a-f:]+$/i.test(value) && value.includes(':');\n};\n\nreturn $input.all()\n  .filter(item => !['ROLE_REVOKED'].includes(item.json.event_type))\n  .filter(item => {\n    const type = item.json.event_type;\n    const ruleId = String(item.json.wazuh_rule_id || '');\n    // 일반 성공 로그는 티켓 흐름에서 제외 (차단 IP 연계 Wazuh 룰일 때만 허용)\n    if (type === 'LOGIN_SUCCESS') return ruleId === POST_BLOCK_LOGIN_RULE;\n    if (type === 'TRANSFER_COMPLETED') return false;\n    return true;\n  })\n  .map(item => {\n    let ip = item.json.src_ip;\n    const type = item.json.event_type;\n    const ruleId = String(item.json.wazuh_rule_id || '');\n\n    // 앞단에서 넘어온 심각도를 그대로 사용 (혹시 붙었을지 모를 '=' 제거 및 공백 정리)\n    const severity = String(item.json.severity || '').replace(/^=/, '').trim().toUpperCase() || 'LOW';\n\n    const knownWazuhCorrelation = [POST_BLOCK_LOGIN_RULE, POST_BLOCK_TRANSFER_RULE].includes(ruleId);\n    const valid = isIp(ip) && (KNOWN_EVENT_TYPES.has(type) || knownWazuhCorrelation || Boolean(ruleId));\n    return { json: { ...item.json, src_ip: ip, severity, valid } };\n  });"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -388,17 +380,11 @@
       ],
       "id": "92d6c973-fbce-4146-826d-7c16c320ca01",
       "name": "Discord",
-      "webhookId": "2bf7debe-25ae-4614-9dfe-f32113d89932",
-      "credentials": {
-        "discordWebhookApi": {
-          "id": "wQXGAgiV5nvMTPJt",
-          "name": "Discord Webhook account"
-        }
-      }
+      "disabled": true
     },
     {
       "parameters": {
-        "chatId": "<YOUR_TELEGRAM_CHAT_ID>",
+        "chatId": "",
         "text": "={{ $json.text }}",
         "additionalFields": {}
       },
@@ -410,59 +396,6 @@
       ],
       "id": "ad83f0ca-af70-42bf-aaad-e64e85fee60d",
       "name": "Send a text message",
-      "webhookId": "75380441-af41-4bba-9484-df0fcedc12b1",
-      "credentials": {
-        "telegramApi": {
-          "id": "ieldh372n0bC5Yr5",
-          "name": "Telegram account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://hooks.slack.com/services/REPLACE/REPLACE/REPLACE",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ text: $json.text }) }}",
-        "options": {
-          "allowUnauthorizedCerts": false,
-          "timeout": 10000
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1264,
-        672
-      ],
-      "id": "91d5df95-fd83-4be5-bc42-bbba6819321d",
-      "name": "슬랙",
-      "disabled": true,
-      "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "s1000001-1111-4a11-8a11-000000000051",
-              "name": "text",
-              "value": "=*🚨 {{$json.incident.title}}*\n심각도: `{{$json.incident.severity}}` | 상태: `{{$json.incident.status}}`\n출발지: `{{$json.incident.src_ip}}` | 이벤트: {{$json.incident.event_count}}건\n조치: {{$json.incident.actions || '없음'}}\n티켓 #{{$json.incident.id}} — BastionPay 보안 대시보드에서 확인",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        992,
-        672
-      ],
-      "id": "e5c1a3e5-d2e5-47a1-a593-a3919622cc1d",
-      "name": "메시지(슬랙)",
       "disabled": true
     },
     {
@@ -559,13 +492,7 @@
       ],
       "id": "221153ef-c63c-4fea-8124-2ef0f31c942b",
       "name": "Discord(검토)",
-      "webhookId": "2bf7debe-25ae-4614-9dfe-f32113d89932",
-      "credentials": {
-        "discordWebhookApi": {
-          "id": "wQXGAgiV5nvMTPJt",
-          "name": "Discord Webhook account"
-        }
-      }
+      "disabled": true
     },
     {
       "parameters": {
@@ -581,13 +508,7 @@
       ],
       "id": "b25c0d9d-f54a-46ba-87da-359f0772f55f",
       "name": "Discord(운영자)",
-      "webhookId": "2bf7debe-25ae-4614-9dfe-f32113d89932",
-      "credentials": {
-        "discordWebhookApi": {
-          "id": "wQXGAgiV5nvMTPJt",
-          "name": "Discord Webhook account"
-        }
-      }
+      "disabled": true
     },
     {
       "parameters": {
@@ -615,14 +536,13 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://192.168.3.16/api/admin/block",
+        "url": "https://host.docker.internal:8080/api/admin/block",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ ip: $('인시던트 티켓 생성').item.json.incident.src_ip, reason: \"SOAR 자동 차단: \" + $('인시던트 티켓 생성').item.json.incident.title }) }}",
         "options": {
-          "allowUnauthorizedCerts": true,
           "timeout": 10000
         }
       },
@@ -633,13 +553,7 @@
         352
       ],
       "id": "7536435b-13da-43ae-96d0-99fcc159b34f",
-      "name": "ip차단",
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "kR7IpsAxetj9mOJN",
-          "name": "Header Auth account"
-        }
-      }
+      "name": "ip차단"
     },
     {
       "parameters": {
@@ -687,8 +601,8 @@
           "conditions": [
             {
               "id": "e1884e26-3f2b-4fd8-8640-3fb50953d8d9",
-              "leftValue": "={{ ['HIGH', 'CRITICAL'].includes($json.incident?.severity) }}",
-              "rightValue": "=",
+              "leftValue": "={{ false }}",
+              "rightValue": "",
               "operator": {
                 "type": "boolean",
                 "operation": "true",
@@ -713,14 +627,13 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://192.168.3.16/api/admin/revoke",
+        "url": "https://host.docker.internal:8080/api/admin/revoke",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ member_id: Number($('Edit Fields(Graylog)').item.json.member_id || 1), reason: \"SOAR 자동 대응: 비정상 ADMIN 권한 탈취 감지\" }) }}",
         "options": {
-          "allowUnauthorizedCerts": true,
           "timeout": 10000
         }
       },
@@ -731,13 +644,7 @@
         192
       ],
       "id": "dcfcf4fc-7396-4d8a-835d-5852ae668e4f",
-      "name": "ADMIN 권한 회수",
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "kR7IpsAxetj9mOJN",
-          "name": "Header Auth account"
-        }
-      }
+      "name": "ADMIN 권한 회수"
     },
     {
       "parameters": {
@@ -751,11 +658,12 @@
           "conditions": [
             {
               "id": "e1884e26-3f2b-4fd8-8640-3fb50953d8d9",
-              "leftValue": "={{ $json.incident.title }}",
-              "rightValue": "=권한 승급",
+              "leftValue": "={{ false }}",
+              "rightValue": "",
               "operator": {
-                "type": "string",
-                "operation": "contains"
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
               }
             }
           ],
@@ -776,14 +684,13 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://192.168.3.16/api/admin/lock",
+        "url": "https://host.docker.internal:8080/api/admin/lock",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ member_id: Number($('Edit Fields(Graylog)').item.json.member_id || 1), reason: \"SOAR 자동 대응: 권한 승급 계정 동결\" }) }}",
         "options": {
-          "allowUnauthorizedCerts": true,
           "timeout": 10000
         }
       },
@@ -794,16 +701,9 @@
         192
       ],
       "id": "9b83f577-fd1b-49d3-824d-3d0301b8a7d2",
-      "name": "계정 잠금",
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "kR7IpsAxetj9mOJN",
-          "name": "Header Auth account"
-        }
-      }
+      "name": "계정 잠금"
     }
   ],
-  "pinData": {},
   "connections": {
     "Webhook(Graylog)": {
       "main": [
@@ -837,11 +737,6 @@
           },
           {
             "node": "메시지(디스코드)",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "메시지(슬랙)",
             "type": "main",
             "index": 0
           },
@@ -924,17 +819,6 @@
     "Discord": {
       "main": [
         []
-      ]
-    },
-    "메시지(슬랙)": {
-      "main": [
-        [
-          {
-            "node": "슬랙",
-            "type": "main",
-            "index": 0
-          }
-        ]
       ]
     },
     "API_AUTH_FAILED?": {
@@ -1039,7 +923,7 @@
       ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
@@ -1047,13 +931,5 @@
     "errorWorkflow": "ReefG434TEyQhHzv",
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
-  },
-  "versionId": "c21dc989-9148-4b96-80c3-be123a43f990",
-  "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "7ae9cc831870022703f4278b5a92deb84a5744f50ea27c99465743dc72ab184b"
-  },
-  "nodeGroups": [],
-  "id": "U10UVYXrMtmKnff1",
-  "tags": []
+  }
 }

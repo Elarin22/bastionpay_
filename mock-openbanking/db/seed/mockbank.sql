@@ -58,6 +58,5 @@ ON DUPLICATE KEY UPDATE client_secret_hash = VALUES(client_secret_hash), name = 
                         transfer_pass_phrase_hash = VALUES(transfer_pass_phrase_hash);
 
 INSERT INTO oauth_client_redirect_uri (id, client_pk, redirect_uri) VALUES
-    (1, 1, 'https://localhost:8080/openbanking/callback'),
-    (2, 1, 'https://192.168.3.17:8080/openbanking/callback')
+    (1, 1, 'https://localhost:8080/openbanking/callback')
 ON DUPLICATE KEY UPDATE redirect_uri = VALUES(redirect_uri);

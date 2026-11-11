@@ -136,7 +136,7 @@ app:
     client-secret: ${OPENBANKING_CLIENT_SECRET:}
     redirect-uri: ${OPENBANKING_REDIRECT_URI:https://localhost:8080/openbanking/callback}
     # 쉼표로 여러 개. 접속한 주소와 같은 것을 골라 쓴다(쿠키가 접속한 호스트에만 붙기 때문). 가짜 은행에도 같은 주소를 등록해야 한다
-    extra-redirect-uris: ${OPENBANKING_EXTRA_REDIRECT_URIS:https://192.168.3.17:8080/openbanking/callback}
+    extra-redirect-uris: ${OPENBANKING_EXTRA_REDIRECT_URIS:}
     org-code: ${OPENBANKING_ORG_CODE:}                     # 이용기관코드(10자리). 잔액조회의 거래고유번호에 쓴다
     token-secret: ${OPENBANKING_TOKEN_SECRET:${JWT_SECRET}}   # access token 암호화 키의 원천
     state-ttl: 10m

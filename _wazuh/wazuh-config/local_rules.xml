@@ -323,7 +323,7 @@
 <group name="bastionpay,syscheck,local,">
   <rule id="100282" level="8">
     <if_sid>550,553,554</if_sid>
-    <field name="file" type="pcre2">(?i)^C:\\Users\\user\\Desktop\\bastionpay\\src\\</field>
+    <field name="file" type="pcre2">(?i)(?:^|[\\/])bastionpay-fim[\\/]</field>
     <description>BastionPay source tree file changed (path=$(file))</description>
     <mitre><id>T1565.001</id></mitre>
     <group>syscheck,file_integrity,bastionpay,</group>

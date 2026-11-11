@@ -141,7 +141,7 @@
         },
         "is_scheduled": {
           "@type": "boolean",
-          "@value": true
+          "@value": false
         },
         "key_spec": [
           "src_ip"
@@ -200,7 +200,7 @@
             },
             "value": {
               "@type": "string",
-              "@value": "6abc75894428107d3612d185"
+              "@value": "__LOCAL_WAZUH_INPUT_ID__"
             },
             "inverted": {
               "@type": "boolean",
@@ -460,11 +460,11 @@
           "type": "http-notification-v2",
           "url": {
             "@type": "string",
-            "@value": "http://192.168.3.12:5678/webhook/bastionpay-graylog"
+            "@value": "http://n8n:5678/webhook/bastionpay-graylog"
           },
           "skip_tls_verification": {
             "@type": "boolean",
-            "@value": true
+            "@value": false
           },
           "method": {
             "@type": "string",
@@ -1187,7 +1187,7 @@
         },
         "is_scheduled": {
           "@type": "boolean",
-          "@value": true
+          "@value": false
         },
         "key_spec": [
           "member_id"
@@ -1518,11 +1518,11 @@
           "type": "http-notification-v2",
           "url": {
             "@type": "string",
-            "@value": "http://192.168.3.12:5678/webhook/bastionpay-graylog"
+            "@value": "http://n8n:5678/webhook/bastionpay-graylog"
           },
           "skip_tls_verification": {
             "@type": "boolean",
-            "@value": true
+            "@value": false
           },
           "method": {
             "@type": "string",
@@ -1573,11 +1573,11 @@
           "type": "http-notification-v2",
           "url": {
             "@type": "string",
-            "@value": "http://192.168.3.12:5678/webhook/bastionpay-graylog"
+            "@value": "http://n8n:5678/webhook/bastionpay-graylog"
           },
           "skip_tls_verification": {
             "@type": "boolean",
-            "@value": true
+            "@value": false
           },
           "method": {
             "@type": "string",
@@ -1853,11 +1853,11 @@
           "type": "http-notification-v2",
           "url": {
             "@type": "string",
-            "@value": "http://192.168.3.12:5678/webhook/bastionpay-graylog"
+            "@value": "http://n8n:5678/webhook/bastionpay-graylog"
           },
           "skip_tls_verification": {
             "@type": "boolean",
-            "@value": true
+            "@value": false
           },
           "method": {
             "@type": "string",
@@ -1992,11 +1992,11 @@
           "type": "http-notification-v2",
           "url": {
             "@type": "string",
-            "@value": "http://192.168.3.12:5678/webhook/bastionpay-graylog"
+            "@value": "http://n8n:5678/webhook/bastionpay-graylog"
           },
           "skip_tls_verification": {
             "@type": "boolean",
-            "@value": true
+            "@value": false
           },
           "method": {
             "@type": "string",
@@ -2950,7 +2950,7 @@
         },
         "is_scheduled": {
           "@type": "boolean",
-          "@value": true
+          "@value": false
         },
         "key_spec": [
           "src_ip"
@@ -3216,11 +3216,11 @@
           "type": "http-notification-v2",
           "url": {
             "@type": "string",
-            "@value": "http://192.168.3.12:5678/webhook/bastionpay-graylog"
+            "@value": "http://n8n:5678/webhook/bastionpay-graylog"
           },
           "skip_tls_verification": {
             "@type": "boolean",
-            "@value": true
+            "@value": false
           },
           "method": {
             "@type": "string",
@@ -3413,7 +3413,7 @@
         },
         "is_scheduled": {
           "@type": "boolean",
-          "@value": true
+          "@value": false
         },
         "key_spec": [
           "source_ip"

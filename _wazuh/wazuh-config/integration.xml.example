@@ -1,0 +1,7 @@
+<integration>
+    <name>custom-bastionpay-n8n</name>
+    <hook_url>http://n8n:5678/webhook/bastionpay-wazuh</hook_url>
+    <api_key>__WAZUH_WEBHOOK_KEY__</api_key>
+    <rule_id>100267,100268,100269,100270,100272,100274,100278,100280,100281,100282,100285</rule_id>
+    <alert_format>json</alert_format>
+  </integration>
