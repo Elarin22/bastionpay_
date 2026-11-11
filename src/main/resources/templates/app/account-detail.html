@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(${history != null} ? ${history.account.alias} : '입출금 계좌', 'app-ui,auth')}"></head>
+<body>
+<a class="skip-link" href="#main">본문 바로가기</a>
+<div th:replace="~{fragments/header :: header}"></div>
+<div th:replace="~{fragments/appnote :: note}"></div>
+<main id="main" class="app">
+  <div class="wrap">
+    <div class="app__inner">
+      <a class="back-link" th:href="@{/accounts}">연결된 계좌</a>
+
+      <p class="notice notice--error" role="alert" th:if="${error}" th:text="${error}">오류</p>
+      <th:block th:unless="${linked}"><div th:replace="~{fragments/notlinked :: prompt}"></div></th:block>
+
+      <th:block th:if="${linked and history != null}">
+        <div class="app__head">
+          <h1 th:text="${history.account.bankName} + ' ' + ${history.account.alias}">은행 별칭</h1>
+          <p class="num-text" th:text="${history.account.maskedNumber}">110-***-000000</p>
+        </div>
+
+        <dl class="facts">
+          <div class="facts__item"><dt>잔액</dt><dd class="amount amount--lg" th:text="${#numbers.formatInteger(history.balance, 3, 'COMMA')} + '원'">0원</dd></div>
+          <div class="facts__item"><dt>조회 기간 거래</dt><dd class="amount amount--lg" th:text="${history.totalCount} + '건'">0건</dd></div>
+        </dl>
+
+        <section class="block" aria-labelledby="h-tx">
+          <div class="block__head"><h2 id="h-tx">거래내역</h2></div>
+
+          <form class="filters" method="get" th:action="@{/accounts/{f}(f=${history.account.fintechUseNum})}">
+            <div class="field">
+              <label for="days">기간</label>
+              <select id="days" name="days">
+                <option value="7" th:selected="${days == 7}">최근 1주일</option>
+                <option value="30" th:selected="${days == 30}">최근 1개월</option>
+                <option value="90" th:selected="${days == 90}">최근 3개월</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="kind">구분</label>
+              <select id="kind" name="kind">
+                <option value="all" th:selected="${kind == 'all'}">전체</option>
+                <option value="in" th:selected="${kind == 'in'}">입금</option>
+                <option value="out" th:selected="${kind == 'out'}">출금</option>
+              </select>
+            </div>
+            <button class="btn-solid" type="submit">조회</button>
+          </form>
+
+          <p class="empty" th:if="${history.transactions.isEmpty()}">조건에 맞는 거래가 없습니다. 기간이나 구분을 바꿔 보세요.</p>
+          <table class="tx" th:unless="${history.transactions.isEmpty()}">
+            <caption class="sr-only">거래내역</caption>
+            <thead><tr><th scope="col">일시</th><th scope="col">내용</th><th scope="col" class="num">금액</th><th scope="col" class="num">거래 후 잔액</th></tr></thead>
+            <tbody>
+              <tr th:each="t : ${history.transactions}">
+                <td class="tx__date" data-label="일시" th:text="${#temporals.format(t.at, 'yyyy.MM.dd HH:mm')}">2026.01.01 09:00</td>
+                <td class="tx__memo" data-label="내용"><span class="memo"><span th:text="${t.content}">내용</span><span class="tag" th:text="${t.deposit} ? '입금' : '출금'">입금</span></span></td>
+                <td class="num amount" data-label="금액" th:classappend="${t.deposit} ? 'amount--in'"
+                    th:text="(${t.deposit} ? '+' : '−') + ${#numbers.formatInteger(t.amount, 3, 'COMMA')} + '원'">+0원</td>
+                <td class="num tx__after" data-label="거래 후 잔액" th:text="${#numbers.formatInteger(t.balanceAfter, 3, 'COMMA')} + '원'">0원</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div th:replace="~{fragments/pager :: pager(${pager})}"></div>
+        </section>
+      </th:block>
+    </div>
+  </div>
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta http-equiv="refresh" th:content="'0;url=' + ${target}">
+  <title>오픈뱅킹 연결 확인 · BastionPay</title>
+  <link rel="icon" type="image/svg+xml" th:href="@{/img/favicon.svg}">
+  <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<main class="wrap">
+  <p>연결 결과를 확인하고 있습니다. 화면이 바뀌지 않으면 <a th:href="${target}">여기를 눌러 주세요</a>.</p>
+</main>
+</body>
+</html>

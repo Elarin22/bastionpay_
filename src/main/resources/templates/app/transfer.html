@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('이체', 'auth,app-ui')}"></head>
+<body>
+<a class="skip-link" href="#main">본문 바로가기</a>
+<div th:replace="~{fragments/header :: header}"></div>
+<div th:replace="~{fragments/appnote :: note}"></div>
+<main id="main" class="auth">
+  <div class="wrap auth__inner">
+
+    <div class="auth__intro">
+      <h1>이체</h1>
+      <p class="auth__lead">입력한 내용을 한 번 더 확인한 뒤에 이체가 실행됩니다.</p>
+      <ol class="steps" aria-label="이체 단계" th:if="${stage == 'form' or stage == 'confirm' or stage == 'done'}">
+        <li th:classappend="${stage == 'form'} ? 'is-current' : 'is-done'" th:attr="aria-current=${stage == 'form'} ? 'step'">입력</li>
+        <li th:classappend="${stage == 'confirm'} ? 'is-current' : (${stage == 'done'} ? 'is-done' : '')" th:attr="aria-current=${stage == 'confirm'} ? 'step'">확인</li>
+        <li th:classappend="${stage == 'done'} ? 'is-current' : ''" th:attr="aria-current=${stage == 'done'} ? 'step'">완료</li>
+      </ol>
+    </div>
+
+    <div class="auth__panel">
+      <p class="form-error" role="alert" th:if="${error}" th:text="${error}">오류 메시지</p>
+
+      <!-- 이체할 수 없는 상태 -->
+      <th:block th:if="${stage == 'empty'}"><div th:replace="~{fragments/notlinked :: prompt}"></div></th:block>
+      <th:block th:if="${stage == 'unavailable'}">
+        <p class="auth__notice">지금은 이체를 사용할 수 없습니다. 이용기관 설정(<code>OPENBANKING_ORG_CODE</code>, <code>OPENBANKING_PASS_PHRASE</code>)이 필요합니다.</p>
+      </th:block>
+      <th:block th:if="${stage == 'noaccount'}">
+        <p class="auth__notice">이체가 허용된 계좌가 없습니다. 오픈뱅킹을 다시 연결하면서 은행 화면에서 <strong>출금이체도 허용</strong>을 선택해 주세요.</p>
+        <a class="btn-solid" th:if="${configured}" th:href="@{/openbanking/authorize}">오픈뱅킹 다시 연결</a>
+      </th:block>
+
+      <!-- 1. 입력 -->
+      <form th:if="${stage == 'form'}" th:action="@{/transfer/confirm}" method="post" class="form" th:object="${transferForm}">
+        <div class="field">
+          <label for="fromAccountId">출금 계좌</label>
+          <select id="fromAccountId" name="fromAccountId">
+            <option th:each="r : ${rows}" th:value="${r.account.fintechUseNum}" th:selected="${r.account.fintechUseNum == transferForm.fromAccountId}"
+                    th:text="${r.account.bankName} + ' ' + ${r.account.alias} + (${r.balance != null} ? ' · ' + ${#numbers.formatInteger(r.balance, 3, 'COMMA')} + '원' : '')">계좌</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="toBank">받는 은행</label>
+          <select id="toBank" name="toBank" required>
+            <option value="" th:selected="${transferForm.toBank == ''}">선택해 주세요</option>
+            <option th:each="b : ${banks}" th:value="${b}" th:text="${b}" th:selected="${b == transferForm.toBank}">은행</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="toAccount">받는 계좌번호</label>
+          <input id="toAccount" name="toAccount" type="text" inputmode="numeric" th:value="${transferForm.toAccount}" required maxlength="24" autocomplete="off">
+          <p class="field__hint">숫자와 하이픈(-)만 입력할 수 있습니다.</p>
+        </div>
+        <div class="field">
+          <label for="amount">이체 금액 (원)</label>
+          <input id="amount" name="amount" type="text" inputmode="numeric" th:value="${transferForm.amount}" required maxlength="15" autocomplete="off" class="field__money">
+          <p class="field__hint" th:if="${tierStatus != null}">
+            <span th:text="'1회 이체 한도 ' + (${tierStatus.limit.isPresent()} ? ${#numbers.formatInteger(tierStatus.limit.getAsLong(), 3, 'COMMA')} + '원' : '제한 없음') + ' (' + ${tierStatus.tier} + ')'">1회 이체 한도 2,000,000원 (STANDARD)</span>
+            <span th:if="${tierStatus.nextThreshold.isPresent()}" th:text="' · 누적 이체 ' + ${#numbers.formatInteger(tierStatus.cumulative, 1, 'COMMA')} + '원, ' + ${tierStatus.next} + '까지 ' + ${#numbers.formatInteger(tierStatus.remainingToNext(), 1, 'COMMA')} + '원'">누적 이체 0원</span>
+          </p>
+        </div>
+        <div class="field">
+          <label for="memo">받는 분 통장 표시 <span class="optional">선택</span></label>
+          <input id="memo" name="memo" type="text" th:value="${transferForm.memo}" maxlength="20" autocomplete="off">
+        </div>
+        <button class="submit" type="submit"><span>다음: 내용 확인</span><svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M4 10h11m-4-4 4 4-4 4"/></svg></button>
+      </form>
+
+      <!-- 2. 확인 / 3. 완료: 같은 요약을 보여 준다 -->
+      <th:block th:if="${stage == 'confirm' or stage == 'done'}">
+        <p class="auth__notice" th:if="${stage == 'confirm'}">아래 내용이 맞는지 확인해 주세요. <strong>이체하기</strong>를 누르면 바로 실행됩니다.</p>
+        <p class="done-note" role="status" th:if="${stage == 'done'}" th:text="${outcome.replayed} ? '이미 처리된 이체입니다.' : '이체가 완료되었습니다.'">이체가 완료되었습니다.</p>
+
+        <dl class="locked">
+          <div class="locked__row"><dt>출금 계좌</dt><dd th:text="${from.bankName} + ' ' + ${from.alias} + ' ' + ${from.maskedNumber}">계좌</dd></div>
+          <div class="locked__row"><dt>받는 계좌</dt><dd th:text="${transferForm.toBank} + ' ' + ${maskedTo}">은행 계좌</dd></div>
+          <div class="locked__row" th:if="${stage == 'done' and toHolder != null}"><dt>받는 분</dt><dd th:text="${toHolder}">홍*동</dd></div>
+          <div class="locked__row"><dt>이체 금액</dt><dd class="amount amount--lg" th:text="${#numbers.formatInteger(transferForm.amount, 3, 'COMMA')} + '원'">0원</dd></div>
+          <div class="locked__row"><dt>수수료</dt><dd>0원</dd></div>
+          <div class="locked__row" th:if="${transferForm.memo != null and !transferForm.memo.isBlank()}"><dt>받는 분 표시</dt><dd th:text="${transferForm.memo}">메모</dd></div>
+          <div class="locked__row" th:if="${balanceAfter != null and balanceAfter >= 0}"><dt th:text="${stage == 'done'} ? '현재 잔액' : '이체 후 잔액'">이체 후 잔액</dt><dd th:text="${#numbers.formatInteger(balanceAfter, 3, 'COMMA')} + '원'">0원</dd></div>
+        </dl>
+
+        <th:block th:if="${stage == 'confirm'}">
+          <form th:action="@{/transfer/execute}" method="post" class="form" data-loading="이체를 처리하는 중입니다">
+            <input type="hidden" name="fromAccountId" th:value="${transferForm.fromAccountId}">
+            <input type="hidden" name="toBank" th:value="${transferForm.toBank}">
+            <input type="hidden" name="toAccount" th:value="${transferForm.toAccount}">
+            <input type="hidden" name="amount" th:value="${transferForm.amount}">
+            <input type="hidden" name="memo" th:value="${transferForm.memo}">
+            <input type="hidden" name="requestId" th:value="${requestId}">
+            <button class="submit" type="submit"><span>이체하기</span><svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M4 10h11m-4-4 4 4-4 4"/></svg></button>
+          </form>
+          <form th:action="@{/transfer/edit}" method="post" class="auth__sub">
+            <input type="hidden" name="fromAccountId" th:value="${transferForm.fromAccountId}">
+            <input type="hidden" name="toBank" th:value="${transferForm.toBank}">
+            <input type="hidden" name="toAccount" th:value="${transferForm.toAccount}">
+            <input type="hidden" name="amount" th:value="${transferForm.amount}">
+            <input type="hidden" name="memo" th:value="${transferForm.memo}">
+            <button class="text-button" type="submit">내용 수정하기</button>
+          </form>
+        </th:block>
+
+        <ul class="start__links start__links--plain" th:if="${stage == 'done'}">
+          <li><a class="start-link start-link--primary" th:href="@{/accounts/{f}(f=${transferForm.fromAccountId})}"><span>거래내역 보기</span><svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M4 10h11m-4-4 4 4-4 4"/></svg></a></li>
+          <li><a class="start-link" th:href="@{/dashboard}"><span>대시보드로</span><svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M4 10h11m-4-4 4 4-4 4"/></svg></a></li>
+          <li><a class="start-link" th:href="@{/transfer}"><span>다른 이체하기</span><svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M4 10h11m-4-4 4 4-4 4"/></svg></a></li>
+        </ul>
+        <p class="done-ref" th:if="${stage == 'done'}">요청 번호 <span class="num-text" th:text="${requestId}">uuid</span></p>
+      </th:block>
+
+      <!-- 입금이 거절되어 출금액을 돌려줌 -->
+      <th:block th:if="${stage == 'refunded'}">
+        <p class="form-error" role="alert">받는 계좌로 이체하지 못했습니다. 출금된 금액은 내 계좌로 돌려드렸습니다.</p>
+        <p class="auth__notice" th:if="${outcome.message != null}" th:text="${outcome.message}">사유</p>
+        <ul class="start__links start__links--plain">
+          <li><a class="start-link start-link--primary" th:href="@{/transfer}"><span>다시 이체하기</span><svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M4 10h11m-4-4 4 4-4 4"/></svg></a></li>
+          <li><a class="start-link" th:href="@{/transactions}"><span>거래내역 보기</span><svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M4 10h11m-4-4 4 4-4 4"/></svg></a></li>
+        </ul>
+        <p class="done-ref">요청 번호 <span class="num-text" th:text="${requestId}">uuid</span></p>
+      </th:block>
+
+      <!-- 결과를 확인하는 중(시간 초과·환불 실패 등) 또는 이미 처리 중인 요청 -->
+      <th:block th:if="${stage == 'review'}">
+        <p class="auth__notice" role="status"><strong>이체 결과를 확인하고 있습니다.</strong> 돈이 이미 움직였을 수 있으니 같은 이체를 다시 시도하지 마세요. 거래내역에서 먼저 확인해 주세요.</p>
+        <ul class="start__links start__links--plain">
+          <li><a class="start-link start-link--primary" th:href="@{/transactions}"><span>거래내역 확인</span><svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M4 10h11m-4-4 4 4-4 4"/></svg></a></li>
+          <li><a class="start-link" th:href="@{/dashboard}"><span>대시보드로</span><svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M4 10h11m-4-4 4 4-4 4"/></svg></a></li>
+        </ul>
+        <p class="done-ref">문의할 때 이 요청 번호를 알려 주세요: <span class="num-text" th:text="${requestId}">uuid</span></p>
+      </th:block>
+    </div>
+  </div>
+</main>
+<div th:replace="~{fragments/loading :: loading}"></div>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

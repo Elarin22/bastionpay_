@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 번호 페이지 이동. Pager(app.Pager)를 넘겨 쓴다 -->
+<nav class="pager" aria-label="페이지 이동" th:fragment="pager(pager)" th:if="${pager != null and pager.needed}">
+  <a class="pager__step" rel="prev" th:if="${pager.prevHref != null}" th:href="${pager.prevHref}">이전</a>
+  <ol class="pager__list">
+    <li th:each="i : ${pager.items}">
+      <span class="pager__gap" th:if="${i.ellipsis}">…</span>
+      <a class="pager__link" th:unless="${i.ellipsis}" th:href="${i.href}" th:text="${i.number}"
+         th:attr="aria-current=${i.current} ? 'page', aria-label=${i.number} + '페이지'">1</a>
+    </li>
+  </ol>
+  <a class="pager__step" rel="next" th:if="${pager.nextHref != null}" th:href="${pager.nextHref}">다음</a>
+</nav>
+</body>
+</html>

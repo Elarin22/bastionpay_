@@ -1,0 +1,65 @@
+server:
+  port: 8090   # BastionPay(8080)와 겹치지 않게
+  error:
+    include-message: never        # 에러 화면·응답에 예외 메시지, 스택트레이스를 싣지 않는다
+    include-stacktrace: never
+    include-exception: false
+
+spring:
+  application:
+    name: mock-openbanking
+  profiles:
+    default: dev   # 프로파일 미지정 시 dev (시드 데이터가 들어가는 개발 환경)
+  config:
+    import: optional:file:.env[.properties]   # mock-openbanking/.env 를 properties 형식으로 로드
+
+  datasource:
+    # 가짜 은행 전용 MySQL(mockbank-mysql, 3307). BastionPay DB 와는 별개의 서버다
+    url: jdbc:mysql://${MOCKBANK_DB_HOST:localhost}:${MOCKBANK_DB_PORT:3307}/mockbank_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${MOCKBANK_DB_USERNAME:mockbank_app}
+    password: ${MOCKBANK_DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      pool-name: mockbank-hikari
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      max-lifetime: 1800000
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate          # 스키마는 Flyway가 담당
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: Asia/Seoul
+          batch_size: 50
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+    validate-on-migrate: true
+    user: ${MOCKBANK_DB_MIGRATION_USERNAME:mockbank_migrator}   # DDL 권한 계정 분리
+    password: ${MOCKBANK_DB_MIGRATION_PASSWORD}
+
+mockbank:
+  auth-code-ttl: 5m          # 인증 코드는 짧게 쓰고 한 번만 쓸 수 있다
+  access-token-ttl: 90d      # 실제 오픈뱅킹의 사용자 토큰 유효기간과 같게
+  transfer-max-amount: 999999999999   # 이체 한 건의 최대 금액(원). 은행 자체 한도는 사실상 없다(API 의 12자리 제한만). 이용기관(BastionPay)이 회원 등급별 한도를 따로 둔다
+
+  # 휴대폰 문자 인증
+  phone-auth:
+    code-ttl: 3m             # 인증번호 유효 시간
+    max-attempts: 5          # 인증번호 하나에 틀릴 수 있는 횟수
+    resend-interval: 60s     # 같은 번호로 다시 보낼 수 있는 간격
+    max-sends-per-hour: 5    # 같은 번호로 한 시간에 보낼 수 있는 횟수(문자 폭탄·비용 방지)
+  # 문자 발송. 기본은 실제로 보내지 않고 서버 로그와 화면에 인증번호를 보여 준다(개발용).
+  # 실제 문자를 보내려면 SOLAPI_ENABLED=true 와 솔라피 키·발신번호를 .env 에 넣는다
+  sms:
+    enabled: ${SOLAPI_ENABLED:false}
+    api-key: ${SOLAPI_API_KEY:}
+    api-secret: ${SOLAPI_API_SECRET:}
+    sender-number: ${SOLAPI_SENDER_NUMBER:}
+    show-code-on-page: ${MOCKBANK_SHOW_SMS_CODE:true}   # 실제 발송 중이 아닐 때만 화면에 인증번호를 보여 준다

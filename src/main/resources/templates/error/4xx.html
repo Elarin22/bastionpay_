@@ -1,0 +1,7 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{error/common :: head('요청을 처리할 수 없습니다')}"></head>
+<body>
+<th:block th:replace="~{error/common :: page(${status}, '요청을 처리할 수 없습니다', ${errorMessage} ?: '요청 내용을 확인한 뒤 다시 시도해 주세요.', false)}"></th:block>
+</body>
+</html>

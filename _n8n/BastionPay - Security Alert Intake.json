@@ -1,0 +1,1059 @@
+{
+  "name": "BastionPay - Security Alert Intake",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bastionpay-graylog",
+        "options": {
+          "responseCode": {
+            "values": {
+              "responseCode": "customCode",
+              "customCode": 202
+            }
+          },
+          "responseData": "{\"accepted\":true}"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -640,
+        560
+      ],
+      "id": "0bd60999-3698-496b-bdbc-720be2446a2d",
+      "name": "Webhook(Graylog)",
+      "webhookId": "s1000001-2222-4a11-8a11-000000000002"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1000001-1111-4a11-8a11-000000000061",
+              "name": "text",
+              "value": "=🚨 BastionPay 보안 인시던트\n{{$json.incident.title}}\n심각도: {{$json.incident.severity}} / 상태: {{$json.incident.status}}\n출발지 IP: {{$json.incident.src_ip}}\n관련 이벤트: {{$json.incident.event_count}}건\n조치: {{$json.incident.actions || '없음'}}\n티켓 ID: {{$json.incident.id}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        992,
+        832
+      ],
+      "id": "f3e3e5c6-8eb0-47c2-a16e-43a7cc3405f6",
+      "name": "메시지(텔레그램)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://192.168.3.16/api/admin/incident",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "src_ip",
+              "value": "={{$json.src_ip}}"
+            },
+            {
+              "name": "title",
+              "value": "={{$json.title}}"
+            },
+            {
+              "name": "severity",
+              "value": "={{ String($json.severity || '').includes('CRITICAL') ? 'CRITICAL' : (String($json.severity || '').includes('HIGH') ? 'HIGH' : (String($json.severity || '').includes('MEDIUM') ? 'MEDIUM' : 'LOW')) }}"
+            },
+            {
+              "name": "hours",
+              "value": "24"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        528,
+        512
+      ],
+      "id": "6ee63703-896e-49df-a177-0e735de3d37d",
+      "name": "인시던트 티켓 생성",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "kR7IpsAxetj9mOJN",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bastionpay-wazuh",
+        "options": {
+          "responseCode": {
+            "values": {
+              "responseCode": "customCode",
+              "customCode": 202
+            }
+          },
+          "responseData": "{\"accepted\":true}"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -640,
+        784
+      ],
+      "id": "1ebfa554-436d-4dff-8759-8cc9fc4051cf",
+      "name": "Webhook(Wazuh)",
+      "webhookId": "s1000001-2222-4a11-8a11-000000000002"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "247681b9-cd20-4b42-bc35-4eee02084c19",
+              "name": "src_ip",
+              "value": "={{ [$json.body?.event?.fields?.source_ip, $json.body?.event?.fields?.src_ip, $json.body?.event?.fields?.filebeat_source_ip, $json.body?.event?.group_by_fields?.filebeat_source_ip, $json.body?.event?.group_by_fields?.src_ip, $json.body?.backlog?.[0]?.fields?.filebeat_source_ip, $json.body?.backlog?.[0]?.fields?.source_ip, $json.body?.backlog?.[0]?.fields?.src_ip].find(v => typeof v === 'string' && v && !v.includes('$')) || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "3261c1b4-92d9-4bc3-9c29-edd914cdc2e1",
+              "name": "title",
+              "value": "={{$json.body?.event_definition_title || $json.body?.event?.message || ''}}",
+              "type": "string"
+            },
+            {
+              "id": "d017b9cf-859e-47ca-9d26-913ca60357ad",
+              "name": "event_type",
+              "value": "={{ [$json.body?.event?.fields?.event_type, $json.body?.event?.fields?.rule, $json.body?.backlog?.[0]?.fields?.filebeat_event_type, $json.body?.backlog?.[0]?.fields?.event_type, $json.body?.backlog?.[0]?.fields?.rule].find(v => typeof v === 'string' && v !== '' && !v.includes('${') && !v.includes('{{')) || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "e03190b0-ad00-407c-b9c2-c34e5c13641f",
+              "name": "severity",
+              "value": "={{ String($json.body?.event?.fields?.severity || $json.body?.backlog?.[0]?.fields?.filebeat_severity || ($json.body?.event?.priority >= 3 ? 'HIGH' : ($json.body?.event?.priority === 2 ? 'MEDIUM' : 'LOW')) || 'LOW').replace(/^=/, '').trim().toUpperCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "5c42e84c-28a7-44c9-87ec-93a490bc013f",
+              "name": "reason_code",
+              "value": "={{ [$json.body?.event?.fields?.reason_code, $json.body?.backlog?.[0]?.fields?.filebeat_reason_code, $json.body?.backlog?.[0]?.fields?.reason_code].find(v => typeof v === 'string' && v && !v.includes('$')) || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "3e8d9e59-5c1d-445c-8a8f-e5d52c8abe87",
+              "name": "graylog_event_id",
+              "value": "={{ $json.body?.event?.id || $json.body?.backlog?.[0]?.id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "cebbcf0b-a54d-4976-afdb-28e950589592",
+              "name": "trace_id",
+              "value": "={{ [$json.body?.event?.fields?.trace_id, $json.body?.backlog?.[0]?.fields?.filebeat_trace_id, $json.body?.backlog?.[0]?.fields?.trace_id].find(v => typeof v === 'string' && v && !v.includes('$')) || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "de862639-1232-4e55-b111-e988a1d48329",
+              "name": "member_id",
+              "value": "={{ [$json.body?.event?.fields?.member_id, $json.body?.backlog?.[0]?.fields?.filebeat_member_id, $json.body?.backlog?.[0]?.fields?.member_id].find(v => v !== undefined && v !== null && String(v) !== '' && !String(v).includes('$')) ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "59961274-fa1c-476a-9c86-e6cf1fb89efe",
+              "name": "transfer_id",
+              "value": "={{ [$json.body?.event?.fields?.transfer_id, $json.body?.backlog?.[0]?.fields?.filebeat_transfer_id, $json.body?.backlog?.[0]?.fields?.transfer_id].find(v => v !== undefined && v !== null && String(v) !== '' && !String(v).includes('$')) ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "a9e92344-c367-4b4f-ad5a-314b2fa47d33",
+              "name": "amount",
+              "value": "={{ [$json.body?.event?.fields?.amount, $json.body?.backlog?.[0]?.fields?.filebeat_amount, $json.body?.backlog?.[0]?.fields?.amount].find(v => v !== undefined && v !== null && String(v) !== '' && !String(v).includes('$')) ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "710134b5-5c36-4b57-b98f-158915cc3152",
+              "name": "currency",
+              "value": "={{ [$json.body?.event?.fields?.currency, $json.body?.backlog?.[0]?.fields?.filebeat_currency, $json.body?.backlog?.[0]?.fields?.currency].find(v => typeof v === 'string' && v && !v.includes('$')) || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "ac208278-f664-42ac-8995-e75c1fec7a0c",
+              "name": "outcome",
+              "value": "={{ [$json.body?.event?.fields?.outcome, $json.body?.backlog?.[0]?.fields?.filebeat_outcome, $json.body?.backlog?.[0]?.fields?.outcome].find(v => typeof v === 'string' && v && !v.includes('$')) || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "65602e32-2412-47da-bb96-706d6c2ee7cf",
+              "name": "alert_source",
+              "value": "graylog",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -416,
+        560
+      ],
+      "id": "740b6223-6b43-4e1b-8230-f2d05f9450f9",
+      "name": "Edit Fields(Graylog)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8deeff0f-48e3-4978-ba31-525406ddc36c",
+              "name": "wazuh_rule_id",
+              "value": "={{ $json.body?.alert?.rule?.id || $json.body?.rule?.id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "a0a2e4de-bf2a-43b9-81ca-f055d9042be4",
+              "name": "wazuh_rule_description",
+              "value": "={{ $json.body?.alert?.rule?.description || $json.body?.rule?.description || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "bd3922de-10ec-4069-8092-1de2814ac031",
+              "name": "wazuh_level",
+              "value": "={{ String($json.body?.alert?.rule?.level ?? $json.body?.rule?.level ?? '') }}",
+              "type": "string"
+            },
+            {
+              "id": "1acda89b-a307-4593-a90e-1a63c1b3d22e",
+              "name": "alert_source",
+              "value": "wazuh",
+              "type": "string"
+            },
+            {
+              "id": "28bbd221-cb53-406d-b969-d5fcf55c3b7a",
+              "name": "src_ip",
+              "value": "={{ $json.body?.alert?.data?.source_ip || $json.body?.alert?.data?.srcip || $json.body?.alert?.srcip || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "666fb765-08bb-4538-b245-e65eb10ef063",
+              "name": "title",
+              "value": "={{ String($json.body?.alert?.rule?.id ?? $json.body?.rule?.id ?? '') === '100274' ? 'BastionPay | 차단된 IP의 반복 접근' : ($json.body?.alert?.rule?.description || $json.body?.rule?.description || 'Wazuh 경보') }}",
+              "type": "string"
+            },
+            {
+              "id": "83da8fd5-eb92-409d-9009-74b7a8638ecd",
+              "name": "event_type",
+              "value": "={{ $json.body?.alert?.data?.event_type || $json.body?.alert?.event_type || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "76c75235-9e85-4a3d-a84b-7d4744fbdce2",
+              "name": "severity",
+              "value": "={{ (() => { const a = $json.body?.alert ?? $json.body ?? {}; const rank = { INFO: 0, LOW: 1, MEDIUM: 2, HIGH: 3, CRITICAL: 4 }; const source = rank[String(a.data?.severity ?? '').toUpperCase()] ?? 0; const level = Number(a.rule?.level ?? 0); const detected = level >= 12 ? 4 : level >= 10 ? 3 : level >= 7 ? 2 : 1; return ['INFO', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'][Math.max(source, detected)]; })() }}",
+              "type": "string"
+            },
+            {
+              "id": "970b5223-6adc-4dba-8b93-0037624f96d3",
+              "name": "reason_code",
+              "value": "={{ $json.body?.alert?.data?.reason_code || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "824dcfde-d6c9-4d62-8670-6173bed22017",
+              "name": "event_id",
+              "value": "={{ $json.body?.alert?.data?.event_id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "3b811f4a-55c7-4f19-a891-4f5a5a6cec69",
+              "name": "trace_id",
+              "value": "={{ $json.body?.alert?.data?.trace_id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "5f03cb4a-d198-42fd-a5a4-f97370e9f422",
+              "name": "member_id",
+              "value": "={{ $json.body?.alert?.data?.member_id ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "ced25928-a43a-4bf2-95eb-8a3abfc9c6a3",
+              "name": "transfer_id",
+              "value": "={{ $json.body?.alert?.data?.transfer_id ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "f082df76-36ec-46dc-892b-0ae9db7e6a94",
+              "name": "amount",
+              "value": "={{ $json.body?.alert?.data?.amount ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "fd3d8824-d7f7-452b-9532-a1a51ae6b75d",
+              "name": "currency",
+              "value": "={{ $json.body?.alert?.data?.currency || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "b5f2695f-cce4-473e-96c0-b2c68963e361",
+              "name": "outcome",
+              "value": "={{ $json.body?.alert?.data?.outcome || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -416,
+        784
+      ],
+      "id": "e5e6f259-221d-4e91-a3ff-13fca39db932",
+      "name": "Edit Fields(Wazuh)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c362b1bf-e417-4c36-ad18-c11e09ca4b2a",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        0,
+        672
+      ],
+      "id": "2df7976c-1c0b-45c9-b3e1-88ccd57db2d9",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "const KNOWN_EVENT_TYPES = new Set([\n  'LOGIN_FAILURE', 'ACCOUNT_LOCKED',\n  'TRANSFER_REFUNDED', 'TRANSFER_REPLAY', 'TRANSFER_FAILED',\n  'TRANSFER_REQUESTED', 'IP_BLOCKED_REQUEST', 'API_AUTH_FAILED',\n  'AUTHENTICATION_REQUIRED', 'TIER_CHANGED',\n  'ACCESS_DENIED',\n  'IDS_ALERT', 'ids-alert',\n  'SNORT_PORTSCAN', 'snort-portscan',\n]);\nconst INFO_EVENT_TYPES = new Set(['LOGIN_SUCCESS', 'TRANSFER_COMPLETED']);\nconst POST_BLOCK_LOGIN_RULE = '100280';\nconst POST_BLOCK_TRANSFER_RULE = '100281';\n\nconst isIp = value => {\n  if (typeof value !== 'string') return false;\n  const ipv4 = value.match(/^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})$/);\n  if (ipv4) return ipv4.slice(1).every(part => Number(part) >= 0 && Number(part) <= 255);\n  return /^[0-9a-f:]+$/i.test(value) && value.includes(':');\n};\n\nreturn $input.all()\n  .filter(item => !['ROLE_REVOKED'].includes(item.json.event_type))\n  .filter(item => {\n    const type = item.json.event_type;\n    const ruleId = String(item.json.wazuh_rule_id || '');\n    // 일반 성공 로그는 티켓 흐름에서 제외 (차단 IP 연계 Wazuh 룰일 때만 허용)\n    if (type === 'LOGIN_SUCCESS') return ruleId === POST_BLOCK_LOGIN_RULE;\n    if (type === 'TRANSFER_COMPLETED') return false;\n    return true;\n  })\n  .map(item => {\n    let ip = item.json.src_ip;\n    const type = item.json.event_type;\n    const ruleId = String(item.json.wazuh_rule_id || '');\n\n    // 파일 변조 등 네트워크 IP가 없는 호스트 내부 사건은 웹 서버 자체 IP로 자동 보정\n    if ((!ip || ip === '없음') && ruleId) {\n      ip = '192.168.3.16';\n    }\n\n    // 앞단에서 넘어온 심각도를 그대로 사용 (혹시 붙었을지 모를 '=' 제거 및 공백 정리)\n    const severity = String(item.json.severity || '').replace(/^=/, '').trim().toUpperCase() || 'LOW';\n\n    const knownWazuhCorrelation = [POST_BLOCK_LOGIN_RULE, POST_BLOCK_TRANSFER_RULE].includes(ruleId);\n    const valid = isIp(ip) && (KNOWN_EVENT_TYPES.has(type) || knownWazuhCorrelation || Boolean(ruleId));\n    return { json: { ...item.json, src_ip: ip, severity, valid } };\n  });"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        672
+      ],
+      "id": "f0fb3aab-3c24-4418-8c32-13f375465475",
+      "name": "검증"
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1264,
+        528
+      ],
+      "id": "92d6c973-fbce-4146-826d-7c16c320ca01",
+      "name": "Discord",
+      "webhookId": "2bf7debe-25ae-4614-9dfe-f32113d89932",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "wQXGAgiV5nvMTPJt",
+          "name": "Discord Webhook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "<YOUR_TELEGRAM_CHAT_ID>",
+        "text": "={{ $json.text }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1264,
+        832
+      ],
+      "id": "ad83f0ca-af70-42bf-aaad-e64e85fee60d",
+      "name": "Send a text message",
+      "webhookId": "75380441-af41-4bba-9484-df0fcedc12b1",
+      "credentials": {
+        "telegramApi": {
+          "id": "ieldh372n0bC5Yr5",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://hooks.slack.com/services/REPLACE/REPLACE/REPLACE",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $json.text }) }}",
+        "options": {
+          "allowUnauthorizedCerts": false,
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1264,
+        672
+      ],
+      "id": "91d5df95-fd83-4be5-bc42-bbba6819321d",
+      "name": "슬랙",
+      "disabled": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1000001-1111-4a11-8a11-000000000051",
+              "name": "text",
+              "value": "=*🚨 {{$json.incident.title}}*\n심각도: `{{$json.incident.severity}}` | 상태: `{{$json.incident.status}}`\n출발지: `{{$json.incident.src_ip}}` | 이벤트: {{$json.incident.event_count}}건\n조치: {{$json.incident.actions || '없음'}}\n티켓 #{{$json.incident.id}} — BastionPay 보안 대시보드에서 확인",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        992,
+        672
+      ],
+      "id": "e5c1a3e5-d2e5-47a1-a593-a3919622cc1d",
+      "name": "메시지(슬랙)",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "26a3c433-fe49-46d0-b7bf-94f867a703c6",
+              "leftValue": "={{$json.event_type}}",
+              "rightValue": "API_AUTH_FAILED",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        512
+      ],
+      "id": "40da6d10-f7e5-4438-8cd4-a4ae52c84d2d",
+      "name": "API_AUTH_FAILED?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "07f26806-f153-45b9-86b7-c40f99cfa55b",
+              "name": "text",
+              "value": "=⚠️ BastionPay API 인증 실패 반복\n   출발지 IP: {{ $json.src_ip }}\n   제목: {{ $json.title }}\n   Graylog 이벤트 ID: {{ $json.graylog_event_id }}\n   조치: 호출 주체 확인 (티켓 미생성)",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        384,
+        288
+      ],
+      "id": "f6a874e6-ebed-41e6-bdc7-18e564689326",
+      "name": "메시지(운영자)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "818297b0-ff37-40fc-930c-6947301c4e6a",
+              "name": "text",
+              "value": "=   🔎 BastionPay 수동 검토 필요 (티켓 미생성)    출처: {{ $json.alert_source }}    제목: {{ $json.title }}    출발지 IP: {{ $json.src_ip || '없음' }}    event_type: {{ $json.event_type || '없음' }}    Wazuh rule: {{ $json.wazuh_rule_id || '-' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        176,
+        704
+      ],
+      "id": "c330567a-ca9c-4966-97c9-f059a2404275",
+      "name": "메시지(검토)"
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        400,
+        704
+      ],
+      "id": "221153ef-c63c-4fea-8124-2ef0f31c942b",
+      "name": "Discord(검토)",
+      "webhookId": "2bf7debe-25ae-4614-9dfe-f32113d89932",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "wQXGAgiV5nvMTPJt",
+          "name": "Discord Webhook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        656,
+        128
+      ],
+      "id": "b25c0d9d-f54a-46ba-87da-359f0772f55f",
+      "name": "Discord(운영자)",
+      "webhookId": "2bf7debe-25ae-4614-9dfe-f32113d89932",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "wQXGAgiV5nvMTPJt",
+          "name": "Discord Webhook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1000001-1111-4a11-8a11-000000000031",
+              "name": "text",
+              "value": "=🚨 BastionPay 보안 인시던트\n제목: {{$json.incident.title}}\n심각도/상태: {{$json.incident.severity}} / {{$json.incident.status}}\n출발지 IP: {{$json.incident.src_ip}}\n관련 이벤트 수: {{$json.incident.event_count}}\n조치: {{$json.incident.actions || '없음'}}\n티켓 ID: {{$json.incident.id}}\n상세: BastionPay 보안 대시보드에서 티켓 ID로 확인\n{{ (() => { const v = $('검증').first().json; if (v.alert_source !== 'graylog') return '거래 ID: ' + (v.transfer_id || '-'); const b = $('Webhook(Graylog)').first().json.body ?? {}; const valid = x => x !== undefined && x !== null && String(x).trim() !== '' && !String(x).includes('${'); const backlog = b.backlog ?? []; const ids = [...new Set(backlog.map(m => m.fields?.filebeat_transfer_id ?? m.fields?.transfer_id).filter(valid).map(String))]; if ((v.title ?? '').includes('S3_')) return '관련 거래 ID: ' + (ids.join(', ') || '원본 로그에서 확인'); const one = [b.event?.fields?.transfer_id, backlog[0]?.fields?.filebeat_transfer_id, backlog[0]?.fields?.transfer_id, v.transfer_id].find(valid); return '거래 ID: ' + (one ?? '-'); })() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        992,
+        528
+      ],
+      "id": "3abd3946-4f3c-4993-9b44-ba6487e414b5",
+      "name": "메시지(디스코드)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://192.168.3.16/api/admin/block",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ip: $('인시던트 티켓 생성').item.json.incident.src_ip, reason: \"SOAR 자동 차단: \" + $('인시던트 티켓 생성').item.json.incident.title }) }}",
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1264,
+        352
+      ],
+      "id": "7536435b-13da-43ae-96d0-99fcc159b34f",
+      "name": "ip차단",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "kR7IpsAxetj9mOJN",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4b48c7af-79b7-460c-9549-700a7a4f9430",
+              "leftValue": "={{$json.incident.severity}}",
+              "rightValue": "CRITICAL",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        768,
+        768
+      ],
+      "id": "fc05bfd9-443d-4f88-aea7-9677ef9cc48b",
+      "name": "If CRITICAL"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e1884e26-3f2b-4fd8-8640-3fb50953d8d9",
+              "leftValue": "={{ ['HIGH', 'CRITICAL'].includes($json.incident?.severity) }}",
+              "rightValue": "=",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        992,
+        368
+      ],
+      "id": "645a98f3-ae69-4dcc-b905-8183d52be4df",
+      "name": "If(High 이상?)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://192.168.3.16/api/admin/revoke",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ member_id: Number($('Edit Fields(Graylog)').item.json.member_id || 1), reason: \"SOAR 자동 대응: 비정상 ADMIN 권한 탈취 감지\" }) }}",
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1264,
+        192
+      ],
+      "id": "dcfcf4fc-7396-4d8a-835d-5852ae668e4f",
+      "name": "ADMIN 권한 회수",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "kR7IpsAxetj9mOJN",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e1884e26-3f2b-4fd8-8640-3fb50953d8d9",
+              "leftValue": "={{ $json.incident.title }}",
+              "rightValue": "=권한 승급",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        992,
+        208
+      ],
+      "id": "0ff463e9-feb0-48ad-85d2-115eb2960a1f",
+      "name": "If(K6 권한 승급 침해?)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://192.168.3.16/api/admin/lock",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ member_id: Number($('Edit Fields(Graylog)').item.json.member_id || 1), reason: \"SOAR 자동 대응: 권한 승급 계정 동결\" }) }}",
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1472,
+        192
+      ],
+      "id": "9b83f577-fd1b-49d3-824d-3d0301b8a7d2",
+      "name": "계정 잠금",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "kR7IpsAxetj9mOJN",
+          "name": "Header Auth account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook(Graylog)": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields(Graylog)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "메시지(텔레그램)": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "인시던트 티켓 생성": {
+      "main": [
+        [
+          {
+            "node": "If CRITICAL",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "메시지(디스코드)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "메시지(슬랙)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If(High 이상?)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If(K6 권한 승급 침해?)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Webhook(Wazuh)": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields(Wazuh)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields(Graylog)": {
+      "main": [
+        [
+          {
+            "node": "검증",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields(Wazuh)": {
+      "main": [
+        [
+          {
+            "node": "검증",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "API_AUTH_FAILED?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "메시지(검토)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "검증": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discord": {
+      "main": [
+        []
+      ]
+    },
+    "메시지(슬랙)": {
+      "main": [
+        [
+          {
+            "node": "슬랙",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API_AUTH_FAILED?": {
+      "main": [
+        [
+          {
+            "node": "메시지(운영자)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "인시던트 티켓 생성",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "메시지(운영자)": {
+      "main": [
+        [
+          {
+            "node": "Discord(운영자)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "메시지(검토)": {
+      "main": [
+        [
+          {
+            "node": "Discord(검토)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "메시지(디스코드)": {
+      "main": [
+        [
+          {
+            "node": "Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ip차단": {
+      "main": [
+        []
+      ]
+    },
+    "If CRITICAL": {
+      "main": [
+        [
+          {
+            "node": "메시지(텔레그램)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "If(High 이상?)": {
+      "main": [
+        [
+          {
+            "node": "ip차단",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ADMIN 권한 회수": {
+      "main": [
+        [
+          {
+            "node": "계정 잠금",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If(K6 권한 승급 침해?)": {
+      "main": [
+        [
+          {
+            "node": "ADMIN 권한 회수",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "ReefG434TEyQhHzv",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "c21dc989-9148-4b96-80c3-be123a43f990",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7ae9cc831870022703f4278b5a92deb84a5744f50ea27c99465743dc72ab184b"
+  },
+  "nodeGroups": [],
+  "id": "U10UVYXrMtmKnff1",
+  "tags": []
+}

@@ -1,0 +1,6 @@
+#!/bin/sh
+# Wazuh custom integration launcher for BastionPay alerts.
+WAZUH_PATH="/var/ossec"
+PYTHON="${WAZUH_PATH}/framework/python/bin/python3"
+SCRIPT="$(dirname "$0")/custom-bastionpay-n8n.py"
+exec "${PYTHON}" "${SCRIPT}" "$@"

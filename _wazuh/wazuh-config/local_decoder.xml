@@ -1,0 +1,43 @@
+<!-- Local Decoders -->
+<!-- Modify it at your will. -->
+<!-- Copyright (C) 2015, Wazuh Inc. -->
+
+<decoder name="webapp-login">
+  <prematch>login_failed |login_success </prematch>
+</decoder>
+<decoder name="webapp-login-fields">
+  <parent>webapp-login</parent>
+  <regex offset="after_parent">user=(\S+) src_ip=(\S+)</regex>
+  <order>user,srcip</order>
+</decoder>
+
+<!-- Flask HTTP 404 Decoder -->
+<decoder name="webapp-404">
+  <prematch>http_404 </prematch>
+</decoder>
+<decoder name="webapp-404-fields">
+  <parent>webapp-404</parent>
+  <regex offset="after_parent">src_ip=(\S+) path=(\S+)</regex>
+  <order>srcip,url</order>
+</decoder>
+
+<!-- Suricata IDS 텍스트 알림 디코더 — 포워더가 eve.json 알림을 'suricata_alert src_ip=.. sid=.. signature=..' 한 줄로 변환(webapp-404 구조와 동일) -->
+<decoder name="suricata-alert">
+  <prematch>suricata_alert </prematch>
+</decoder>
+<decoder name="suricata-alert-fields">
+  <parent>suricata-alert</parent>
+  <regex type="pcre2" offset="after_parent">src_ip=(\S+) sid=(\S+) signature=(.+)$</regex>
+  <order>srcip,id,signature</order>
+</decoder>
+
+<!-- S11: Snort NIDS 탐지 (suricata-alert 구조) -->
+<decoder name="snort-alert">
+    <prematch>snort_alert </prematch>
+</decoder>
+
+<decoder name="snort-alert-fields">
+    <parent>snort-alert</parent>
+    <regex type="pcre2" offset="after_parent">src_ip=(\S+) sid=(\S+) signature=(.+)$</regex>
+    <order>srcip,id,signature</order>
+</decoder>

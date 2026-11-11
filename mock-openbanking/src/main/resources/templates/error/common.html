@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title th:text="${title}">오류</title>
+  <link rel="stylesheet" th:href="@{/css/bank.css}">
+</head>
+<body>
+<div th:fragment="testbed" class="testbed">오픈뱅킹 테스트베드 · 교육용 가짜 은행입니다. 실제 금융 거래가 일어나지 않습니다.</div>
+</body>
+</html>

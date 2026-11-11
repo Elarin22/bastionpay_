@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>인증을 진행할 수 없습니다</title>
+  <link rel="stylesheet" th:href="@{/css/bank.css}">
+</head>
+<body>
+<div class="testbed">오픈뱅킹 테스트베드 · 교육용 가짜 은행입니다. 실제 금융 거래가 일어나지 않습니다.</div>
+<main>
+  <h1>인증을 진행할 수 없습니다</h1>
+  <p class="lead" th:text="${message}">사유</p>
+  <p class="hint">이용기관 화면으로 돌아가 처음부터 다시 시도해 주세요.</p>
+</main>
+</body>
+</html>

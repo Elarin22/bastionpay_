@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{error/common :: head('일시적인 오류가 발생했습니다')}"></head>
+<body>
+<div th:replace="~{error/common :: testbed}"></div>
+<main>
+  <h1>일시적인 오류가 발생했습니다</h1>
+  <p class="lead">잠시 후 다시 시도해 주세요.</p>
+  <p class="hint">문제가 계속되면 이용기관에 문의해 주세요.</p>
+</main>
+</body>
+</html>

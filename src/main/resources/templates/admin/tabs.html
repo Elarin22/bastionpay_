@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 보안 관리 화면 공용 상단 탭. active = overview | events | stats | tickets | blocked | accounts | audit -->
+<nav class="subnav" th:fragment="tabs(active)" aria-label="보안 관리 메뉴">
+  <a th:href="@{/admin/security}" th:attr="aria-current=${active == 'overview'} ? 'page'">개요</a>
+  <a th:href="@{/admin/security/events}" th:attr="aria-current=${active == 'events'} ? 'page'">이벤트</a>
+  <a th:href="@{/admin/security/stats}" th:attr="aria-current=${active == 'stats'} ? 'page'">집계</a>
+  <a th:href="@{/admin/security/tickets}" th:attr="aria-current=${active == 'tickets'} ? 'page'">인시던트 티켓</a>
+  <a th:href="@{/admin/security/blocked-ips}" th:attr="aria-current=${active == 'blocked'} ? 'page'">차단 IP</a>
+  <a th:href="@{/admin/security/accounts}" th:attr="aria-current=${active == 'accounts'} ? 'page'">계정·권한</a>
+  <a th:href="@{/admin/security/audit}" th:attr="aria-current=${active == 'audit'} ? 'page'">감사 기록</a>
+</nav>
+</body>
+</html>

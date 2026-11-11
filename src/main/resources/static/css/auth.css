@@ -1,0 +1,127 @@
+/* 로그인·회원가입 전용. 인라인 스타일 없이 CSP(style-src 'self')를 지킨다. */
+.auth { border-top: 1px solid var(--line); }
+.auth__inner {
+  display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(2rem, 6vw, 6rem); align-items: start;
+  padding-block: clamp(3.5rem, 8vw, 7rem);
+  min-height: 60vh;
+}
+.auth h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; letter-spacing: -0.035em; line-height: 1.25; }
+.auth__lead { margin-top: 1rem; color: var(--ink-2); max-width: 26rem; }
+
+/* 진행 단계 */
+.steps { margin-top: 2.5rem; max-width: 22rem; border-top: 2px solid var(--ink); counter-reset: step; }
+.steps li {
+  counter-increment: step; display: flex; align-items: center; gap: 0.9rem;
+  padding: 0.95rem 0.25rem; border-bottom: 1px solid var(--line);
+  color: var(--ink-2); opacity: 0.7; font-weight: 500;
+}
+.steps li::before {
+  content: counter(step); flex: none; display: grid; place-items: center;
+  width: 1.5rem; height: 1.5rem; border: 1px solid var(--steel-300); border-radius: 50%;
+  font-size: 0.8125rem; font-variant-numeric: tabular-nums;
+}
+.steps li.is-done { opacity: 1; color: var(--ink); }
+.steps li.is-done::before {
+  content: ""; border-color: var(--ink);
+  background: var(--ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='m3.5 8.5 3 3 6-7'/%3E%3C/svg%3E") center / 0.85rem no-repeat;
+}
+.steps li.is-current { opacity: 1; color: var(--ink); font-weight: 800; }
+.steps li.is-current::before { background: var(--navy-900); border-color: var(--navy-900); color: var(--white); }
+
+/* 폼 */
+.auth__panel { max-width: 32rem; width: 100%; }
+.form { display: grid; gap: 1.5rem; }
+.field { display: grid; gap: 0.5rem; }
+.field label { font-size: 0.9375rem; font-weight: 700; color: var(--ink); }
+.field input {
+  width: 100%; min-height: 3.25rem; padding: 0.7rem 0.9rem;
+  font: inherit; color: var(--ink); background: var(--white);
+  border: 1px solid var(--steel-300); border-radius: 2px;
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.field input:hover { border-color: var(--navy-800); }
+.field input:focus-visible { outline: none; border-color: var(--navy-900); box-shadow: 0 0 0 3px rgba(127, 166, 240, 0.45); }
+.field__code { font-size: 1.5rem; letter-spacing: 0.5em; font-variant-numeric: tabular-nums; max-width: 14rem; }
+.field__hint { font-size: 0.875rem; color: var(--ink-2); }
+.field__hint.is-ok { color: var(--ink); font-weight: 600; }
+.field__hint.is-bad { color: #a4262c; }
+
+.form-error {
+  margin-bottom: 1.5rem; padding: 0.85rem 1rem; font-size: 0.9375rem; font-weight: 600;
+  color: #7a1c20; background: #fbeeee; border: 1px solid #e8bcbe; border-radius: 2px;
+}
+.form .form-error { margin-bottom: 0; }
+.form-notice {
+  padding: 0.85rem 1rem; font-size: 0.9375rem; font-weight: 600; color: var(--ink);
+  background: var(--paper); border: 1px solid var(--line); border-radius: 2px;
+}
+
+.rules { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; font-size: 0.875rem; color: var(--ink-2); }
+.rules li::before {
+  content: ""; display: inline-block; width: 0.55rem; height: 0.55rem; margin-right: 0.4rem;
+  border: 1px solid currentColor; border-radius: 50%; vertical-align: 0.0625rem;
+}
+.rules li.is-met { color: var(--ink); font-weight: 600; }
+.rules li.is-met::before { background: currentColor; }
+
+/* 제출 버튼: 시작하기 링크와 같은 어휘 */
+.submit {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%;
+  min-height: 3.5rem; padding: 0.9rem 1.25rem;
+  font: inherit; font-size: 1.0625rem; font-weight: 700; cursor: pointer;
+  color: var(--white); background: var(--navy-900); border: 1px solid var(--navy-900); border-radius: 2px;
+  transition: background-color 0.25s var(--ease), transform 0.25s var(--ease);
+}
+.submit svg { flex: none; transition: transform 0.25s var(--ease); }
+.submit:hover { background: var(--navy-800); }
+.submit:hover svg { transform: translateX(4px); }
+.submit:active { transform: translateY(1px); }
+.submit:disabled { cursor: progress; opacity: 0.6; }
+
+.auth__notice { margin-bottom: 1.5rem; color: var(--ink-2); }
+.auth__notice strong { color: var(--ink); }
+.auth__sub { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; margin-top: 1.5rem; }
+.text-button {
+  padding: 0.4rem 0; font: inherit; font-size: 0.9375rem; font-weight: 500; cursor: pointer;
+  color: var(--ink-2); background: linear-gradient(var(--ink), var(--ink)) left bottom / 100% 1px no-repeat; border: 0;
+  transition: color 0.2s var(--ease);
+}
+.text-button:hover { color: var(--ink); }
+.auth__alt { margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px solid var(--line); font-size: 0.9375rem; color: var(--ink-2); }
+.auth__alt a { color: var(--ink); font-weight: 700; }
+
+/* 잠긴 값 (인증·확인이 끝나 변경할 수 없는 항목) */
+.locked { margin-bottom: 2rem; border-top: 2px solid var(--ink); }
+.locked__row {
+  display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: 1rem;
+  padding: 0.9rem 0.25rem; border-bottom: 1px solid var(--line);
+}
+.locked dt { color: var(--ink-2); font-size: 0.9375rem; }
+.locked dd { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.25rem 1rem; font-weight: 600; overflow-wrap: anywhere; }
+.locked__tag { font-size: 0.8125rem; font-weight: 500; color: var(--ink-2); }
+
+/* 전체 화면 로딩 */
+.loading {
+  position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
+  background: rgba(255, 255, 255, 0.94);
+}
+.loading[hidden] { display: none; }
+.loading__box { text-align: center; padding: 2rem; }
+.loading__text { margin-top: 1.5rem; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; }
+.loading__sub { margin-top: 0.4rem; font-size: 0.9375rem; color: var(--ink-2); }
+.spinner {
+  display: inline-block; width: 2.75rem; height: 2.75rem;
+  border: 3px solid var(--line); border-top-color: var(--navy-900); border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 3s; } }
+
+@media (max-width: 62rem) {
+  .auth__inner { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .steps { max-width: none; }
+}
+@media (max-width: 36rem) {
+  .locked__row { grid-template-columns: minmax(0, 1fr); gap: 0.15rem; }
+}

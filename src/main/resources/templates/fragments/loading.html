@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 메일 전송·로그인처럼 서버 응답을 기다리는 동안 보여 주는 전체 화면 로딩. app.js 가 data-loading 폼 제출 시 연다. -->
+<div th:fragment="loading" class="loading" id="loading" role="status" aria-live="polite" hidden>
+  <div class="loading__box">
+    <span class="spinner" aria-hidden="true"></span>
+    <p class="loading__text" id="loading-text">처리하는 중입니다</p>
+    <p class="loading__sub">창을 닫지 말고 잠시만 기다려 주세요.</p>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title th:text="${subject}">BastionPay</title>
+</head>
+<!--/*
+  메일 본문. 이메일 클라이언트는 외부 CSS·웹폰트를 지원하지 않으므로 인라인 스타일 + 테이블 레이아웃을 쓴다.
+  사이트 토큰: navy-950 #061428, navy-900 #0b2140, ink-2 #435570, line #dde3ec, paper #f4f6fa
+*/-->
+<body style="margin:0;padding:0;background-color:#f4f6fa;">
+<!-- 받은편지함 미리보기 문구 -->
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#f4f6fa;font-size:1px;line-height:1px;" th:text="${preheader}">미리보기</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f6fa;">
+  <tr>
+    <td align="center" style="padding:32px 12px;">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:560px;max-width:100%;background-color:#ffffff;font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',-apple-system,'Segoe UI',Arial,sans-serif;">
+
+        <!-- 상단: 딥 네이비 워드마크 -->
+        <tr>
+          <td style="background-color:#0b2140;padding:26px 36px;">
+            <span style="font-size:20px;font-weight:800;letter-spacing:-0.5px;color:#ffffff;">BastionPay</span>
+          </td>
+        </tr>
+
+        <!-- 본문 -->
+        <tr>
+          <td style="padding:44px 36px 8px 36px;">
+            <h1 style="margin:0;font-size:26px;line-height:1.35;font-weight:800;letter-spacing:-0.8px;color:#0b2140;" th:text="${heading}">제목</h1>
+            <p style="margin:16px 0 0 0;font-size:15px;line-height:1.75;color:#435570;" th:text="${intro}">안내 문구</p>
+          </td>
+        </tr>
+
+        <!-- 인증 코드: 카드 대신 위아래 괘선으로만 구분 -->
+        <tr th:if="${code}">
+          <td style="padding:28px 36px 0 36px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="border-top:2px solid #0b2140;border-bottom:1px solid #dde3ec;padding:28px 0 26px 0;">
+                  <div style="font-size:13px;line-height:1.4;color:#435570;">인증 코드</div>
+                  <div style="margin-top:10px;font-size:44px;line-height:1.1;font-weight:800;letter-spacing:12px;color:#0b2140;font-family:'SF Mono',Menlo,Consolas,'Courier New',monospace;" th:text="${code}">123456</div>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding-top:14px;font-size:13px;line-height:1.6;color:#435570;" th:text="${expiryNote}">10분 안에 입력해 주세요.</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- 단계 안내 -->
+        <tr th:if="${steps}">
+          <td style="padding:28px 36px 0 36px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr th:each="step : ${steps}">
+                <td style="border-top:1px solid #dde3ec;padding:13px 2px;font-size:14px;line-height:1.6;color:#435570;" th:text="${step}">단계</td>
+              </tr>
+              <tr><td style="border-top:1px solid #dde3ec;font-size:0;line-height:0;height:1px;">&nbsp;</td></tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- 안전 안내 -->
+        <tr>
+          <td style="padding:32px 36px 44px 36px;font-size:13px;line-height:1.75;color:#6b7a90;" th:text="${notice}">본인이 요청하지 않았다면 이 메일을 무시해 주세요.</td>
+        </tr>
+
+        <!-- 하단: 교육용 프로젝트 고지 -->
+        <tr>
+          <td style="background-color:#061428;padding:24px 36px;">
+            <div style="font-size:14px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">BastionPay</div>
+            <div style="margin-top:6px;font-size:12px;line-height:1.7;color:#a5bbdd;">교육용 테스트베드 프로젝트 · 실제 금융 거래가 이루어지지 않습니다.<br>이 메일은 발신 전용입니다.</div>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

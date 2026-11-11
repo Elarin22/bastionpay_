@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('대시보드', 'app-ui')}"></head>
+<body>
+<a class="skip-link" href="#main">본문 바로가기</a>
+<div th:replace="~{fragments/header :: header}"></div>
+<div th:replace="~{fragments/appnote :: note}"></div>
+<main id="main" class="app">
+  <div class="wrap">
+    <div class="app__inner">
+      <div class="app__head">
+        <h1><span th:text="${currentMember.nickname}">닉네임</span>님의 자산</h1>
+        <p th:if="${linked}">오픈뱅킹으로 연결한 계좌의 합계입니다. 항목을 누르면 계좌별 내역을 볼 수 있습니다.</p>
+        <p th:unless="${linked}">오픈뱅킹을 연결하면 여러 은행의 계좌를 한 곳에서 확인할 수 있습니다.</p>
+      </div>
+
+      <p class="notice notice--error" role="alert" th:if="${error}" th:text="${error}">오류</p>
+
+      <!-- 연결 전 -->
+      <th:block th:unless="${linked}"><div th:replace="~{fragments/notlinked :: prompt}"></div></th:block>
+
+      <!-- 연결 후 -->
+      <section class="block" aria-labelledby="h-assets" th:if="${linked and summary != null}">
+        <div class="block__head"><h2 id="h-assets">자산 현황</h2></div>
+        <ul class="rows rows--lg">
+          <li>
+            <a class="row row--nav" th:href="@{/connect}">
+              <span class="row__main"><strong>입출금 계좌</strong><small th:text="${summary.accountCount} + '개 계좌'">3개 계좌</small></span>
+              <span class="row__end">
+                <span class="amount" th:if="${summary.totalBalance != null}" th:text="${#numbers.formatInteger(summary.totalBalance, 3, 'COMMA')} + '원'">0원</span>
+                <small th:if="${summary.totalBalance == null}">잔액 조회 설정 필요</small>
+                <svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M4 10h11m-4-4 4 4-4 4"/></svg>
+              </span>
+            </a>
+          </li>
+          <li class="row row--sum" th:if="${summary.totalBalance != null}"><span>총 자산</span><span class="amount" th:text="${#numbers.formatInteger(summary.totalBalance, 3, 'COMMA')} + '원'">0원</span></li>
+        </ul>
+        <p class="field__hint" th:if="${summary.failedCount > 0}" th:text="${summary.failedCount} + '개 계좌의 잔액을 불러오지 못해 합계에서 빠졌습니다.'">일부 실패</p>
+        <p class="field__hint" th:if="${summary.totalBalance == null}">잔액 합계에는 이용기관코드(<code>OPENBANKING_ORG_CODE</code>) 설정이 필요합니다.</p>
+      </section>
+
+      <section class="block block--gap" aria-labelledby="h-go" th:if="${linked}">
+        <div class="block__head"><h2 id="h-go">바로가기</h2></div>
+        <ul class="start__links start__links--plain">
+          <li><a class="start-link start-link--primary" th:href="@{/connect}"><span>연결된 계좌 보기</span><svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M4 10h11m-4-4 4 4-4 4"/></svg></a></li>
+          <li><a class="start-link" th:href="@{/transfer}"><span>이체하기</span><svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M4 10h11m-4-4 4 4-4 4"/></svg></a></li>
+          <li><a class="start-link" th:href="@{/transactions}"><span>전체 거래내역</span><svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M4 10h11m-4-4 4 4-4 4"/></svg></a></li>
+        </ul>
+      </section>
+    </div>
+  </div>
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

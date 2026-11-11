@@ -1,0 +1,67 @@
+HELP.md
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### Secrets (DESIGN.md 14-2) ###
+.env
+.env.*
+!.env.example
+application-*-secret.yml
+application-*-secret.yaml
+*.pem
+*.jks
+*.p12
+*.key
+*.crt
+*.csr
+
+### Logs ###
+*.log
+logs/
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Local data / misc ###
+*.sql.gz
+*.dump
+.claude/settings.local.json
+checklist.md
+*.env
+### Local-only dev data (실제 이메일·계좌번호 포함) ###
+*.local.sql

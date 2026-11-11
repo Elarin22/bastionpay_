@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('거래내역', 'app-ui,auth')}"></head>
+<body>
+<a class="skip-link" href="#main">본문 바로가기</a>
+<div th:replace="~{fragments/header :: header}"></div>
+<div th:replace="~{fragments/appnote :: note}"></div>
+<main id="main" class="app">
+  <div class="wrap">
+    <div class="app__inner">
+      <div class="app__head">
+        <h1>거래내역</h1>
+        <p>연결한 계좌의 입출금 내역을 한 곳에서 봅니다.</p>
+      </div>
+
+      <p class="notice notice--error" role="alert" th:if="${error}" th:text="${error}">오류</p>
+      <th:block th:unless="${linked}"><div th:replace="~{fragments/notlinked :: prompt}"></div></th:block>
+
+      <section class="block" aria-labelledby="h-tx" th:if="${linked and result != null}">
+        <div class="block__head"><h2 id="h-tx">조회 조건</h2></div>
+        <form class="filters" method="get" th:action="@{/transactions}">
+          <div class="field">
+            <label for="account">계좌</label>
+            <select id="account" name="account">
+              <option value="all" th:selected="${account == 'all'}">전체 계좌</option>
+              <option th:each="a : ${accounts}" th:value="${a.fintechUseNum}" th:selected="${account == a.fintechUseNum}" th:text="${a.bankName} + ' ' + ${a.alias}">계좌</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="days">기간</label>
+            <select id="days" name="days">
+              <option value="7" th:selected="${days == 7}">최근 1주일</option>
+              <option value="30" th:selected="${days == 30}">최근 1개월</option>
+              <option value="90" th:selected="${days == 90}">최근 3개월</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="kind">구분</label>
+            <select id="kind" name="kind">
+              <option value="all" th:selected="${kind == 'all'}">전체</option>
+              <option value="in" th:selected="${kind == 'in'}">입금</option>
+              <option value="out" th:selected="${kind == 'out'}">출금</option>
+            </select>
+          </div>
+          <button class="btn-solid" type="submit">조회</button>
+        </form>
+
+        <p class="field__hint" role="status" th:if="${result.failedAccounts > 0}" th:text="${result.failedAccounts} + '개 계좌의 거래내역을 불러오지 못해 목록에서 빠졌습니다.'">일부 실패</p>
+        <p class="empty" th:if="${result.rows.isEmpty()}">조건에 맞는 거래가 없습니다. 기간이나 구분을 바꿔 보세요.</p>
+        <table class="tx" th:unless="${result.rows.isEmpty()}">
+          <caption class="sr-only">거래내역</caption>
+          <thead><tr><th scope="col">일시</th><th scope="col">계좌</th><th scope="col">내용</th><th scope="col" class="num">금액</th></tr></thead>
+          <tbody>
+            <tr th:each="r : ${pageRows}">
+              <td class="tx__date" data-label="일시" th:text="${#temporals.format(r.tx.at, 'yyyy.MM.dd HH:mm')}">2026.01.01 09:00</td>
+              <td class="tx__after" data-label="계좌" th:text="${r.accountLabel}">은행 별칭</td>
+              <td class="tx__memo" data-label="내용"><span class="memo"><span th:text="${r.tx.content}">내용</span><span class="tag" th:text="${r.tx.deposit} ? '입금' : '출금'">입금</span></span></td>
+              <td class="num amount" data-label="금액" th:classappend="${r.tx.deposit} ? 'amount--in'"
+                  th:text="(${r.tx.deposit} ? '+' : '−') + ${#numbers.formatInteger(r.tx.amount, 3, 'COMMA')} + '원'">+0원</td>
+            </tr>
+          </tbody>
+        </table>
+        <div th:replace="~{fragments/pager :: pager(${pager})}"></div>
+        <p class="field__hint" th:if="${result.truncated}">거래가 많아 최근 100건까지만 보여 드립니다. 계좌나 기간을 좁혀 조회해 보세요.</p>
+      </section>
+    </div>
+  </div>
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 오픈뱅킹을 연결하기 전에 계좌·거래 화면 대신 보여 주는 안내. 사용하는 화면은 configured 를 모델에 담아야 한다 -->
+<section class="block" aria-labelledby="h-empty" th:fragment="prompt">
+  <div class="block__head"><h2 id="h-empty">연결된 계좌가 없습니다</h2></div>
+  <div class="prose">
+    <ol class="flow">
+      <li>은행 화면에서 본인 인증</li>
+      <li>조회 이용 동의</li>
+      <li>연결할 계좌 선택</li>
+    </ol>
+    <p class="prose__sub">인증 정보(비밀번호 등)는 BastionPay가 받지 않습니다. 인증은 은행 화면에서 이루어집니다.</p>
+  </div>
+  <a class="btn-solid" th:if="${configured}" th:href="@{/openbanking/authorize}">오픈뱅킹 계좌 연결</a>
+  <a class="btn-line" th:unless="${configured}" th:href="@{/connect}">연결 안내 보기</a>
+</section>
+</body>
+</html>

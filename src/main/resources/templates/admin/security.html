@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('보안 대시보드', 'app-ui,auth')}"></head>
+<body>
+<a class="skip-link" href="#main">본문 바로가기</a>
+<div th:replace="~{fragments/header :: header}"></div>
+<main id="main" class="app">
+  <div class="wrap">
+    <div class="app__inner app__inner--wide">
+      <div class="app__head app__head--split">
+        <div>
+          <h1>보안 대시보드</h1>
+          <p>지금 확인할 것과 분류별 현황을 한눈에 봅니다. 자세한 목록은 위 탭에서 필터를 걸어 10건씩 봅니다. 관리자만 볼 수 있습니다.</p>
+        </div>
+        <nav class="range" aria-label="조회 기간">
+          <a th:each="r : ${ranges}" th:href="@{/admin/security(range=${r.code()})}" th:text="${r.label()}"
+             th:attr="aria-current=${r == d.range} ? 'page'">24시간</a>
+        </nav>
+      </div>
+      <div th:replace="~{admin/tabs :: tabs('overview')}"></div>
+
+      <p class="notice" role="status" th:if="${notice}" th:text="${notice}">안내</p>
+
+      <!-- 그래프: 화면에서 가장 먼저 보인다. 데이터는 스크립트가 JSON 으로 불러 그린다(CSP 때문에 인라인 스크립트는 쓰지 않는다) -->
+      <section class="charts" data-charts th:data-src="@{/admin/security/charts(range=${d.range.code()})}" aria-label="보안 이벤트 그래프">
+        <div class="app__cols app__cols--even">
+          <section class="block" aria-labelledby="h-c-line">
+            <div class="block__head"><h2 id="h-c-line">이벤트 추이 <span class="count" id="count-timeline" th:text="'최근 ' + ${d.range.label()} + ' · 심각도별'">최근 24시간 · 심각도별</span></h2>
+              <a class="block__more" th:href="@{/admin/security/graph/timeline(range=${d.range.code()})}">크게 보기</a></div>
+            <div class="chart__frame" th:data-detail="@{/admin/security/graph/timeline(range=${d.range.code()})}"><canvas id="chart-timeline" role="img" aria-label="시간대별 보안 이벤트 건수를 심각도별로 쌓은 막대 그래프"></canvas></div>
+          </section>
+          <section class="block" aria-labelledby="h-c-transfer">
+            <div class="block__head"><h2 id="h-c-transfer">이체 결과 추이 <span class="count" id="count-transfers" th:text="'최근 ' + ${d.range.label()}">최근 24시간</span></h2>
+              <a class="block__more" th:href="@{/admin/security/graph/transfers(range=${d.range.code()})}">크게 보기</a></div>
+            <div class="chart__frame" th:data-detail="@{/admin/security/graph/transfers(range=${d.range.code()})}"><canvas id="chart-transfers" role="img" aria-label="시간대별 이체 결과(완료, 실패, 환불, 검토 필요) 막대 그래프"></canvas></div>
+          </section>
+        </div>
+        <div class="app__cols app__cols--even block--gap">
+          <section class="block" aria-labelledby="h-c-types">
+            <div class="block__head"><h2 id="h-c-types">이벤트 종류별 비율 <span class="count" id="count-types" th:text="'최근 ' + ${d.range.label()}">최근 24시간</span></h2>
+              <a class="block__more" th:href="@{/admin/security/graph/types(range=${d.range.code()})}">크게 보기</a></div>
+            <div class="chart__frame chart__frame--tall" th:data-detail="@{/admin/security/graph/types(range=${d.range.code()})}"><canvas id="chart-types" role="img" aria-label="이벤트 종류별 비율 도넛 그래프"></canvas></div>
+          </section>
+          <section class="block" aria-labelledby="h-c-ips">
+            <div class="block__head"><h2 id="h-c-ips">로그인 실패 상위 IP <span class="count" th:text="'최근 ' + ${d.range.label()}">최근 24시간</span></h2>
+              <a class="block__more" th:href="@{/admin/security/graph/ips(range=${d.range.code()})}">크게 보기</a></div>
+            <div class="chart__frame chart__frame--tall" th:data-detail="@{/admin/security/graph/ips(range=${d.range.code()})}"><canvas id="chart-ips" role="img" aria-label="로그인 실패가 많은 출발지 IP 막대 그래프"></canvas></div>
+          </section>
+        </div>
+        <p class="chart__error" id="chart-error" role="status" hidden>그래프를 불러오지 못했습니다. 아래 목록과 표로 같은 내용을 확인할 수 있습니다.</p>
+        <noscript><p class="chart__error">그래프는 자바스크립트가 켜져 있어야 보입니다. 아래 목록과 표로 같은 내용을 확인할 수 있습니다.</p></noscript>
+      </section>
+
+      <!-- 지금 사람이 봐야 하는 것 -->
+      <div class="app__cols app__cols--even">
+        <section class="block" aria-labelledby="h-review">
+          <div class="block__head"><h2 id="h-review">검토가 필요한 이체 <span class="count" th:text="${d.reviews.total} + '건'">0건</span></h2></div>
+          <p class="empty" th:if="${d.reviews.rows.isEmpty()}">사람이 확인해야 하는 이체가 없습니다.</p>
+          <ul class="rows" th:unless="${d.reviews.rows.isEmpty()}">
+            <li th:each="t : ${d.reviews.rows}" class="row">
+              <span class="row__main">
+                <strong th:text="'이체 #' + ${t.transferId} + ' · 회원 #' + ${t.memberId}">이체 #1</strong>
+                <small th:text="${t.from} + ' · ' + ${t.time} + ' · ' + ${t.code}">출금 계좌</small>
+              </span>
+              <span class="amount" th:text="${#numbers.formatInteger(t.amount, 3, 'COMMA')} + '원'">0원</span>
+            </li>
+          </ul>
+          <div th:replace="~{fragments/pager :: pager(${reviewPager})}"></div>
+        </section>
+
+        <section class="block" aria-labelledby="h-locked">
+          <div class="block__head">
+            <h2 id="h-locked">잠긴 계정 <span class="count" th:text="${d.lockedTotal} + '개'">0개</span></h2>
+            <a class="block__more" th:if="${d.lockedTotal > d.locked.size()}" th:href="@{/admin/security/accounts(status='ANY_LOCKED')}">전체 보기</a>
+          </div>
+          <p class="empty" th:if="${d.locked.isEmpty()}">잠긴 계정이 없습니다.</p>
+          <ul class="rows" th:unless="${d.locked.isEmpty()}">
+            <li th:each="l : ${d.locked}" class="row row--account">
+              <span class="row__main"><strong th:text="${l.nickname}">닉네임</strong><small th:text="${l.email} + ' · ' + ${l.lockedUntil}">te***@test.com</small></span>
+              <form th:action="@{/admin/security/accounts/{id}/unlock(id=${l.memberId})}" method="post">
+                <input type="hidden" name="range" th:value="${d.range.code()}">
+                <button class="row__action" type="submit">잠금 해제</button>
+              </form>
+            </li>
+          </ul>
+          <p class="field__hint">자동 잠금은 합성 테스트 계정에만 적용됩니다. 해제하면 감사 기록에 누가 했는지 남습니다.</p>
+        </section>
+      </div>
+
+      <!-- 분류별 이벤트 현황: 분류를 펼치면 종류별 건수가 나오고, 누르면 이벤트 탭이 그 조건으로 열린다 -->
+      <section class="block block--gap" aria-labelledby="h-cat">
+        <div class="block__head">
+          <h2 id="h-cat">분류별 이벤트 <span class="count" th:text="'최근 ' + ${d.range.label()} + ' · 총 ' + ${#numbers.formatInteger(d.total, 1, 'COMMA')} + '건 · 높음 이상 ' + ${d.important} + '건'">최근 24시간</span></h2>
+          <a class="block__more" th:href="@{/admin/security/events(range=${d.range.code()})}">이벤트 전체 보기</a>
+        </div>
+        <ul class="cats">
+          <li th:each="c : ${d.categories}">
+            <details th:if="${c.count > 0}">
+              <summary>
+                <span class="cats__name" th:text="${c.label}">인증·세션</span>
+                <span class="cats__meta"><span class="tag tag--high" th:if="${c.important > 0}" th:text="'높음 이상 ' + ${c.important}">높음 이상 1</span></span>
+                <span class="cats__count num-text" th:text="${#numbers.formatInteger(c.count, 1, 'COMMA')} + '건'">0건</span>
+              </summary>
+              <ul class="cats__types">
+                <li th:each="t : ${c.types}">
+                  <a class="type-link" th:href="@{/admin/security/events(range=${d.range.code()}, type=${t.type})}" th:text="${t.type}">LOGIN_FAILURE</a>
+                  <span class="tag" th:classappend="'tag--' + ${#strings.toLowerCase(t.severity.name())}" th:text="${t.severity.name()}">LOW</span>
+                  <span class="num-text" th:text="${t.count} + '건'">0건</span>
+                </li>
+                <li class="cats__all"><a class="type-link" th:href="@{/admin/security/events(range=${d.range.code()}, category=${c.code})}" th:text="${c.label} + ' 전체 보기'">전체 보기</a></li>
+              </ul>
+            </details>
+            <div class="cats__empty" th:if="${c.count == 0}">
+              <span class="cats__name" th:text="${c.label}">오픈뱅킹</span>
+              <span class="cats__count num-text">0건</span>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <div class="app__cols app__cols--even block--gap">
+        <section class="block" aria-labelledby="h-ip">
+          <div class="block__head">
+            <h2 id="h-ip">로그인 실패가 많은 IP</h2>
+            <a class="block__more" th:href="@{/admin/security/stats(range=${d.range.code()}, by='ip', type='LOGIN_FAILURE')}">집계 보기</a>
+          </div>
+          <p class="empty" th:if="${d.topIps.isEmpty()}">로그인 실패가 없습니다.</p>
+          <ul class="rows" th:unless="${d.topIps.isEmpty()}">
+            <li th:each="c : ${d.topIps}" class="row row--account">
+              <span class="row__main"><strong class="num-text" th:text="${c.label}">203.0.113.9</strong><small th:text="${c.count} + '회 실패'">0회</small></span>
+              <span class="acts">
+                <form th:action="@{/admin/security/tickets}" method="post"><input type="hidden" name="ip" th:value="${c.label}"><button class="row__action" type="submit">티켓</button></form>
+                <form th:action="@{/admin/security/blocked-ips}" method="post"><input type="hidden" name="ip" th:value="${c.label}"><input type="hidden" name="reason" value="로그인 실패 다수"><button class="row__action" type="submit">차단</button></form>
+              </span>
+            </li>
+          </ul>
+        </section>
+        <section class="block" aria-labelledby="h-subject">
+          <div class="block__head">
+            <h2 id="h-subject">로그인 실패가 많은 계정</h2>
+            <a class="block__more" th:href="@{/admin/security/stats(range=${d.range.code()}, by='account', type='LOGIN_FAILURE')}">집계 보기</a>
+          </div>
+          <p class="empty" th:if="${d.topSubjects.isEmpty()}">로그인 실패가 없습니다.</p>
+          <ul class="rows" th:unless="${d.topSubjects.isEmpty()}">
+            <li th:each="c : ${d.topSubjects}" class="row"><span class="row__main"><strong th:text="${c.label}">test@test.com</strong><small class="num-text" th:text="'식별값 ' + ${c.detail}">식별값</small></span><span class="amount" th:text="${c.count} + '회'">0회</span></li>
+          </ul>
+          <p class="field__hint">계정은 이메일 원문이 아니라 서버 키로 만든 식별값으로 집계합니다.</p>
+        </section>
+      </div>
+
+      <section class="block block--gap" aria-labelledby="h-recent">
+        <div class="block__head">
+          <h2 id="h-recent">최근 높음 이상 이벤트</h2>
+          <a class="block__more" th:href="@{/admin/security/events(range=${d.range.code()}, severity='HIGH_PLUS')}">전체 보기</a>
+        </div>
+        <p class="empty" th:if="${d.recentImportant.isEmpty()}">이 기간에는 높음 이상(HIGH·CRITICAL) 이벤트가 없습니다.</p>
+        <table class="tx" th:unless="${d.recentImportant.isEmpty()}">
+          <caption class="sr-only">최근 높음 이상 이벤트</caption>
+          <thead><tr><th scope="col">시각(KST)</th><th scope="col">이벤트</th><th scope="col">심각도</th><th scope="col">출발지 IP</th><th scope="col">회원</th><th scope="col">사유</th></tr></thead>
+          <tbody>
+            <tr th:each="e : ${d.recentImportant}">
+              <td class="tx__date" data-label="시각" th:text="${e.time}">10.21 16:00:00</td>
+              <td data-label="이벤트" th:text="${e.type}">ACCOUNT_LOCKED</td>
+              <td data-label="심각도"><span class="tag" th:classappend="'tag--' + ${#strings.toLowerCase(e.severity.name())}" th:text="${e.severity.name()}">HIGH</span></td>
+              <td class="num-text" data-label="출발지 IP" th:text="${e.sourceIp} ?: '-'">127.0.0.1</td>
+              <td class="num-text" data-label="회원" th:text="${e.member} ?: '-'">#5</td>
+              <td class="tx__after" data-label="사유" th:text="${e.reason} ?: '-'">FAILED_LOGIN_THRESHOLD</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </div>
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+<script th:src="@{/js/vendor/chart.umd.js}" defer></script>
+<script th:src="@{/js/admin-charts.js}" defer></script>
+</body>
+</html>

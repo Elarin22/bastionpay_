@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('오픈뱅킹 연결', 'app-ui')}"></head>
+<body>
+<a class="skip-link" href="#main">본문 바로가기</a>
+<div th:replace="~{fragments/header :: header}"></div>
+<div th:replace="~{fragments/appnote :: note}"></div>
+<main id="main" class="app">
+  <div class="wrap">
+    <div class="app__inner">
+      <div class="app__head">
+        <h1>오픈뱅킹 연결</h1>
+        <p>오픈뱅킹에서 본인 인증을 마치면 다른 은행의 계좌도 한 곳에서 조회할 수 있습니다.</p>
+      </div>
+
+      <p class="notice" role="status" th:if="${result}" th:text="${result}">연결했습니다.</p>
+      <p class="notice notice--error" role="alert" th:if="${error}" th:text="${error}">오류</p>
+
+      <section class="block" aria-labelledby="h-flow" th:unless="${linked}">
+        <div class="block__head"><h2 id="h-flow">연결 순서</h2></div>
+        <div class="prose">
+          <ol class="flow">
+            <li>은행 화면에서 본인 인증</li>
+            <li>조회·이체 이용 동의</li>
+            <li>연결할 계좌 선택</li>
+          </ol>
+          <p class="prose__sub">인증 정보(비밀번호 등)는 BastionPay가 받지 않습니다. 인증은 은행 화면에서 이루어집니다.</p>
+        </div>
+        <a class="btn-solid" th:if="${configured}" th:href="@{/openbanking/authorize}">오픈뱅킹 계좌 연결</a>
+        <button class="btn-line" type="button" th:unless="${configured}" disabled aria-describedby="connect-note">오픈뱅킹 계좌 연결</button>
+        <p class="field__hint" id="connect-note" th:unless="${configured}">오픈뱅킹 인증 정보가 설정되지 않아 연결할 수 없습니다. 서버의 <code>OPENBANKING_CLIENT_ID</code>, <code>OPENBANKING_CLIENT_SECRET</code> 설정을 확인해 주세요.</p>
+      </section>
+
+      <section class="block" aria-labelledby="h-accounts" th:if="${linked}">
+        <div class="block__head"><h2 id="h-accounts">연결된 계좌 <span class="count" th:text="${rows.size()} + '개'">0개</span></h2></div>
+        <p class="empty" th:if="${rows.isEmpty()}">오픈뱅킹에 등록된 계좌가 없습니다.</p>
+        <ul class="rows" th:unless="${rows.isEmpty()}">
+          <li th:each="r : ${rows}" class="row row--account">
+            <a class="row__link" th:href="@{/accounts/{f}(f=${r.account.fintechUseNum})}">
+              <span class="row__main">
+                <strong th:text="${r.account.bankName} + ' ' + ${r.account.alias}">은행 별칭</strong>
+                <small class="num-text" th:text="${r.account.maskedNumber}">110-***-0000</small>
+              </span>
+              <span class="row__end">
+                <span class="amount" th:if="${r.balance != null}" th:text="${#numbers.formatInteger(r.balance, 3, 'COMMA')} + '원'">0원</span>
+                <small th:if="${r.balance == null}">잔액 확인 불가</small>
+                <svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M4 10h11m-4-4 4 4-4 4"/></svg>
+              </span>
+            </a>
+          </li>
+        </ul>
+        <p class="field__hint" th:if="${!balanceEnabled}">잔액과 거래내역을 보려면 이용기관코드(<code>OPENBANKING_ORG_CODE</code>) 설정이 필요합니다.</p>
+        <p class="field__hint" th:unless="${rows.isEmpty()}">계좌를 누르면 거래내역을 볼 수 있습니다.</p>
+        <form th:action="@{/openbanking/disconnect}" method="post">
+          <button class="btn-line" type="submit">연결 해제</button>
+        </form>
+      </section>
+    </div>
+  </div>
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

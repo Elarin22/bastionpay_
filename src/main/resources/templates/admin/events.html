@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('이벤트', 'app-ui,auth')}"></head>
+<body>
+<a class="skip-link" href="#main">본문 바로가기</a>
+<div th:replace="~{fragments/header :: header}"></div>
+<main id="main" class="app">
+  <div class="wrap">
+    <div class="app__inner app__inner--wide">
+      <div class="app__head">
+        <h1>보안 관리</h1>
+        <p>보안 이벤트를 분류·종류·심각도·결과·출발지 IP·회원으로 걸러 봅니다. 10건씩 나눠 보여 줍니다.</p>
+      </div>
+      <div th:replace="~{admin/tabs :: tabs(${tab})}"></div>
+
+      <section class="block" aria-labelledby="h-ev">
+        <div class="block__head"><h2 id="h-ev">이벤트 <span class="count" th:text="${#numbers.formatInteger(result.total, 1, 'COMMA')} + '건'">0건</span></h2></div>
+        <form class="filters filters--wrap" method="get" th:action="@{/admin/security/events}">
+          <div class="field">
+            <label for="range">기간</label>
+            <select id="range" name="range">
+              <option th:each="r : ${ranges}" th:value="${r.code()}" th:selected="${range == r.code()}" th:text="${r.label()}">24시간</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="category">분류</label>
+            <select id="category" name="category">
+              <option value="all" th:selected="${category == 'all'}">전체</option>
+              <option th:each="c : ${categories}" th:value="${c.name()}" th:selected="${category == c.name()}" th:text="${c.label()}">인증·세션</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="type">종류</label>
+            <select id="type" name="type">
+              <option value="all" th:selected="${type == 'all'}">전체</option>
+              <optgroup th:each="c : ${categories}" th:label="${c.label()}">
+                <option th:each="t : ${c.types()}" th:value="${t.name()}" th:selected="${type == t.name()}" th:text="${t.name()}">LOGIN_FAILURE</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="field">
+            <label for="severity">심각도</label>
+            <select id="severity" name="severity">
+              <option value="all" th:selected="${severity == 'all'}">전체</option>
+              <option value="HIGH_PLUS" th:selected="${severity == 'HIGH_PLUS'}">높음 이상</option>
+              <option th:each="s : ${severities}" th:value="${s.name()}" th:selected="${severity == s.name()}" th:text="${s.name()}">LOW</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="outcome">결과</label>
+            <select id="outcome" name="outcome">
+              <option value="all" th:selected="${outcome == 'all'}">전체</option>
+              <option th:each="o : ${outcomes}" th:value="${o.name()}" th:selected="${outcome == o.name()}" th:text="${o.name()}">DENIED</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="ip">출발지 IP</label>
+            <input id="ip" name="ip" type="text" th:value="${ip}" maxlength="45" autocomplete="off" placeholder="203.0.113.9">
+          </div>
+          <div class="field field--narrow">
+            <label for="member">회원 번호</label>
+            <input id="member" name="member" type="text" th:value="${member}" maxlength="19" autocomplete="off" inputmode="numeric">
+          </div>
+          <button class="btn-solid" type="submit">조회</button>
+          <a class="btn-line" th:href="@{/admin/security/events}">초기화</a>
+        </form>
+        <p class="notice" role="alert" th:if="${invalid}">출발지 IP 또는 회원 번호 형식이 올바르지 않습니다. IP 주소(예: 203.0.113.9)와 숫자 회원 번호를 입력해 주세요.</p>
+        <p class="empty" th:if="${result.rows.isEmpty() and !invalid}">조건에 맞는 이벤트가 없습니다. 기간을 늘리거나 조건을 줄여 보세요.</p>
+        <table class="tx" th:unless="${result.rows.isEmpty()}">
+          <caption class="sr-only">보안 이벤트</caption>
+          <thead><tr><th scope="col">시각(KST)</th><th scope="col">이벤트</th><th scope="col">심각도</th><th scope="col">결과</th><th scope="col">출발지 IP</th><th scope="col">회원</th><th scope="col">사유·대상</th></tr></thead>
+          <tbody>
+            <tr th:each="e : ${result.rows}">
+              <td class="tx__date" data-label="시각" th:text="${e.time}">10.21 16:00:00</td>
+              <td data-label="이벤트" th:text="${e.type}">LOGIN_FAILURE</td>
+              <td data-label="심각도"><span class="tag" th:classappend="'tag--' + ${#strings.toLowerCase(e.severity.name())}" th:text="${e.severity.name()}">LOW</span></td>
+              <td data-label="결과" th:text="${e.outcome}">FAILURE</td>
+              <td class="num-text" data-label="출발지 IP" th:text="${e.sourceIp} ?: '-'">127.0.0.1</td>
+              <td class="num-text" data-label="회원" th:text="${e.member} ?: '-'">#5</td>
+              <td class="tx__after" data-label="사유·대상"><span th:text="${e.reason} ?: '-'">BAD_CREDENTIALS</span><small class="sub" th:if="${e.target}" th:text="${e.target}">GET /admin</small></td>
+            </tr>
+          </tbody>
+        </table>
+        <div th:replace="~{fragments/pager :: pager(${pager})}"></div>
+      </section>
+    </div>
+  </div>
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

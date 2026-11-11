@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{error/common :: head('요청을 처리할 수 없습니다')}"></head>
+<body>
+<div th:replace="~{error/common :: testbed}"></div>
+<main>
+  <h1>요청을 처리할 수 없습니다</h1>
+  <p class="lead">요청 내용이 올바르지 않거나 허용되지 않습니다.</p>
+  <p class="hint">이용기관 화면으로 돌아가 처음부터 다시 시도해 주세요.</p>
+</main>
+</body>
+</html>

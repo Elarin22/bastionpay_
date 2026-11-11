@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('감사 기록', 'app-ui,auth')}"></head>
+<body>
+<a class="skip-link" href="#main">본문 바로가기</a>
+<div th:replace="~{fragments/header :: header}"></div>
+<main id="main" class="app">
+  <div class="wrap">
+    <div class="app__inner app__inner--wide">
+      <div class="app__head">
+        <h1>보안 관리</h1>
+        <p>누가(시스템·관리자·API) 어떤 대응 조치를 했는지 남긴 기록입니다. 10건씩 나눠 보여 줍니다.</p>
+      </div>
+      <div th:replace="~{admin/tabs :: tabs(${tab})}"></div>
+
+      <section class="block" aria-labelledby="h-au">
+        <div class="block__head"><h2 id="h-au">감사 기록 <span class="count" th:text="${#numbers.formatInteger(result.total, 1, 'COMMA')} + '건'">0건</span></h2></div>
+        <form class="filters filters--wrap" method="get" th:action="@{/admin/security/audit}">
+          <div class="field">
+            <label for="range">기간</label>
+            <select id="range" name="range">
+              <option th:each="r : ${ranges}" th:value="${r.code()}" th:selected="${range == r.code()}" th:text="${r.label()}">24시간</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="actor">행위자</label>
+            <select id="actor" name="actor">
+              <option value="all" th:selected="${actor == 'all'}">전체</option>
+              <option value="ADMIN" th:selected="${actor == 'ADMIN'}">관리자</option>
+              <option value="API" th:selected="${actor == 'API'}">API</option>
+              <option value="SYSTEM" th:selected="${actor == 'SYSTEM'}">시스템</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="action">조치</label>
+            <select id="action" name="action">
+              <option value="all" th:selected="${action == 'all'}">전체</option>
+              <option th:each="a : ${actions}" th:value="${a.name()}" th:selected="${action == a.name()}" th:text="${a.name()}">ACCOUNT_LOCKED</option>
+            </select>
+          </div>
+          <div class="field field--narrow">
+            <label for="target">대상 회원 번호</label>
+            <input id="target" name="target" type="text" th:value="${target}" maxlength="19" autocomplete="off" inputmode="numeric">
+          </div>
+          <button class="btn-solid" type="submit">조회</button>
+          <a class="btn-line" th:href="@{/admin/security/audit}">초기화</a>
+        </form>
+        <p class="notice" role="alert" th:if="${invalid}">대상 회원 번호는 숫자로 입력해 주세요.</p>
+        <p class="empty" th:if="${result.rows.isEmpty() and !invalid}">조건에 맞는 감사 기록이 없습니다. 계정을 잠그거나 IP를 차단하면 여기에 남습니다.</p>
+        <table class="tx" th:unless="${result.rows.isEmpty()}">
+          <caption class="sr-only">감사 기록</caption>
+          <thead><tr><th scope="col">시각(KST)</th><th scope="col">행위자</th><th scope="col">조치</th><th scope="col">대상 회원</th><th scope="col">사유</th><th scope="col">출발지 IP</th></tr></thead>
+          <tbody>
+            <tr th:each="a : ${result.rows}">
+              <td class="tx__date" data-label="시각" th:text="${a.time}">10.21 16:00:00</td>
+              <td data-label="행위자" th:text="${a.actor}">시스템</td>
+              <td data-label="조치" th:text="${a.action}">ACCOUNT_LOCKED</td>
+              <td class="num-text" data-label="대상 회원" th:text="${a.target}">#2</td>
+              <td class="tx__after" data-label="사유" th:text="${a.reason} ?: '-'">ADMIN_LOCK</td>
+              <td class="num-text" data-label="출발지 IP" th:text="${a.sourceIp} ?: '-'">127.0.0.1</td>
+            </tr>
+          </tbody>
+        </table>
+        <div th:replace="~{fragments/pager :: pager(${pager})}"></div>
+      </section>
+    </div>
+  </div>
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

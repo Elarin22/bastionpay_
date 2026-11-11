@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  기본 로그 설정(Spring Boot base.xml) + 보안 이벤트 전용 JSONL 파일.
+  보안 이벤트(SECURITY_EVENT 로거)는 한 줄에 JSON 하나만 쓴다. 다른 로그와 섞이지 않게 별도 파일로 보내고,
+  Graylog·Wazuh 가 이 파일을 수집한다. 메시지 자체가 JSON 이라 패턴은 %msg%n 뿐이다.
+-->
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/base.xml"/>
+
+    <springProperty scope="context" name="SECURITY_EVENT_LOG_FILE" source="app.security.event-log-file"
+                    defaultValue="logs/security-events.jsonl"/>
+
+    <appender name="SECURITY_EVENT_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${SECURITY_EVENT_LOG_FILE}</file>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${SECURITY_EVENT_LOG_FILE}.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <springProfile name="!dev">
+        <logger name="SECURITY_EVENT" level="INFO" additivity="false">
+            <appender-ref ref="SECURITY_EVENT_FILE"/>
+        </logger>
+    </springProfile>
+
+    <!-- 개발 중에는 콘솔에도 같은 JSON 한 줄을 보여 준다 -->
+    <springProfile name="dev">
+        <logger name="SECURITY_EVENT" level="INFO" additivity="false">
+            <appender-ref ref="SECURITY_EVENT_FILE"/>
+            <appender-ref ref="CONSOLE"/>
+        </logger>
+    </springProfile>
+</configuration>

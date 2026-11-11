@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title th:text="${title} + ' · BastionPay'">오류 · BastionPay</title>
+  <link rel="icon" type="image/svg+xml" th:href="@{/img/favicon.svg}">
+  <link rel="stylesheet" th:href="@{/css/app.css}">
+  <link rel="stylesheet" th:href="@{/css/error.css}">
+  <script th:src="@{/js/app.js}" defer></script>
+</head>
+<body>
+<th:block th:fragment="page(code, title, message, loginFirst)">
+  <a class="skip-link" href="#main">본문 바로가기</a>
+  <div th:replace="~{fragments/header :: header}"></div>
+  <main id="main" class="error-page">
+    <div class="wrap error-page__inner">
+      <p class="error-page__code" th:text="${code}" aria-hidden="true">404</p>
+      <div class="error-page__body">
+        <h1 th:text="${title}">제목</h1>
+        <p class="error-page__message" th:text="${message}">설명</p>
+        <ul class="start__links">
+          <li th:if="${loginFirst}">
+            <a class="start-link start-link--primary" th:href="@{/login}"><span>로그인</span><svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M4 10h11m-4-4 4 4-4 4"/></svg></a>
+          </li>
+          <li>
+            <a th:class="${loginFirst} ? 'start-link' : 'start-link start-link--primary'" th:href="@{/}"><span>홈으로</span><svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M4 10h11m-4-4 4 4-4 4"/></svg></a>
+          </li>
+          <li th:unless="${loginFirst}">
+            <a class="start-link" th:href="@{/login}"><span>로그인</span><svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M4 10h11m-4-4 4 4-4 4"/></svg></a>
+          </li>
+        </ul>
+        <p class="error-page__ref" th:if="${traceId}">참조 번호 <span class="num" th:text="${traceId}">abc123</span></p>
+      </div>
+    </div>
+  </main>
+  <div th:replace="~{fragments/footer :: footer}"></div>
+</th:block>
+</body>
+</html>

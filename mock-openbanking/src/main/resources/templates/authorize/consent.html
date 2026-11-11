@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>연결할 계좌 선택</title>
+  <link rel="stylesheet" th:href="@{/css/bank.css}">
+</head>
+<body>
+<div class="testbed">오픈뱅킹 테스트베드 · 교육용 가짜 은행입니다. 실제 금융 거래가 일어나지 않습니다.</div>
+<main>
+  <h1>연결할 계좌 선택</h1>
+  <p class="lead"><strong th:text="${clientName}">이용기관</strong>에 허용할 계좌를 선택해 주세요. 선택하지 않은 계좌는 조회도 이체도 할 수 없습니다.</p>
+  <form th:action="@{/oauth/2.0/authorize/consent}" method="post">
+    <p class="error" role="alert" th:if="${error}" th:text="${error}">오류</p>
+    <p class="hint" th:if="${accounts.isEmpty()}">연결할 수 있는 계좌가 없습니다.</p>
+
+    <fieldset class="acct-table" th:unless="${accounts.isEmpty()}" th:classappend="${wantsTransfer} ? 'acct-table--transfer'">
+      <legend class="sr-only">연결할 계좌</legend>
+      <div class="acct-head" aria-hidden="true">
+        <span>계좌</span><span>연결</span><span th:if="${wantsTransfer}">출금이체</span>
+      </div>
+      <div class="acct-row" th:each="a : ${accounts}">
+        <div class="acct-info">
+          <strong th:text="${a.bankName} + ' ' + ${a.accountAlias}">은행 별칭</strong>
+          <small th:text="${a.accountNumMasked}">110-***-0000</small>
+        </div>
+        <label class="acct-check">
+          <input type="checkbox" name="accountId" th:value="${a.id}">
+          <span class="sr-only" th:text="${a.bankName} + ' ' + ${a.accountAlias} + ' 연결'">연결</span>
+        </label>
+        <label class="acct-check" th:if="${wantsTransfer}">
+          <input type="checkbox" name="transferId" th:value="${a.id}">
+          <span class="sr-only" th:text="${a.bankName} + ' ' + ${a.accountAlias} + ' 출금이체도 허용'">출금이체도 허용</span>
+        </label>
+      </div>
+    </fieldset>
+
+    <p class="hint" th:if="${wantsTransfer and !accounts.isEmpty()}">출금이체는 연결한 계좌에서만 허용됩니다. 연결하지 않은 계좌의 이체 선택은 적용되지 않습니다.</p>
+    <p class="hint">요청하는 권한: <span class="scopes" th:text="${#strings.listJoin(scopeLabels, ', ')}">본인 확인, 계좌 조회</span></p>
+    <div class="actions">
+      <button type="submit">동의하고 연결</button>
+    </div>
+  </form>
+  <form class="cancel-form" th:action="@{/oauth/2.0/authorize/cancel}" method="post">
+    <button class="secondary" type="submit">취소하고 돌아가기</button>
+  </form>
+</main>
+</body>
+</html>

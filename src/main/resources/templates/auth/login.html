@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('로그인', 'auth')}"></head>
+<body>
+<a class="skip-link" href="#main">본문 바로가기</a>
+<div th:replace="~{fragments/header :: header}"></div>
+<main id="main" class="auth">
+  <div class="wrap auth__inner">
+    <div class="auth__intro">
+      <h1>로그인</h1>
+      <p class="auth__lead">이메일과 비밀번호로 BastionPay에 로그인합니다.</p>
+    </div>
+    <div class="auth__panel">
+      <form th:action="@{/login}" method="post" th:object="${loginForm}" class="form" data-loading="로그인하는 중입니다">
+        <p class="form-notice" role="status" th:if="${notice}" th:text="${notice}">안내</p>
+        <p class="form-error" role="alert" th:if="${error}" th:text="${error}">오류 메시지</p>
+        <div class="field">
+          <label for="email">이메일</label>
+          <input id="email" name="email" type="email" th:value="*{email}" required maxlength="254" autocomplete="username" autofocus>
+        </div>
+        <div class="field">
+          <label for="password">비밀번호</label>
+          <input id="password" name="password" type="password" required maxlength="64" autocomplete="current-password">
+        </div>
+        <button class="submit" type="submit"><span>로그인</span><svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M4 10h11m-4-4 4 4-4 4"/></svg></button>
+      </form>
+      <p class="auth__alt">계정이 없나요? <a th:href="@{/signup}">회원가입</a></p>
+    </div>
+  </div>
+</main>
+<div th:replace="~{fragments/loading :: loading}"></div>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

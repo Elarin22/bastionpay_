@@ -1,0 +1,7 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{error/common :: head('접근할 수 없습니다')}"></head>
+<body>
+<th:block th:replace="~{error/common :: page('403', '접근할 수 없습니다', ${errorMessage} ?: '이 페이지에 접근할 권한이 없습니다. 방금까지 잘 되던 화면이라면 페이지를 새로고침한 뒤 다시 시도해 주세요.', false)}"></th:block>
+</body>
+</html>

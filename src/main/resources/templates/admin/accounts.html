@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('계정·권한', 'app-ui,auth')}"></head>
+<body>
+<a class="skip-link" href="#main">본문 바로가기</a>
+<div th:replace="~{fragments/header :: header}"></div>
+<main id="main" class="app">
+  <div class="wrap">
+    <div class="app__inner app__inner--wide">
+      <div class="app__head">
+        <h1>보안 관리</h1>
+        <p>계정을 잠그거나 풀고, 관리자 권한을 회수합니다. 조치하면 그 계정의 로그인 세션이 바로 끊기고, 누가 했는지 감사 기록에 남습니다.</p>
+      </div>
+      <div th:replace="~{admin/tabs :: tabs(${tab})}"></div>
+
+      <p class="notice" role="status" th:if="${notice}" th:text="${notice}">안내</p>
+
+      <section class="block" aria-labelledby="h-viol" th:if="${!violations.isEmpty()}">
+        <div class="block__head"><h2 id="h-viol">허용 목록 밖 관리자 <span class="count" th:text="${violations.size()} + '명'">1명</span></h2></div>
+        <ul class="rows">
+          <li th:each="v : ${violations}" class="row row--account">
+            <span class="row__main"><strong th:text="${v.nickname}">닉네임</strong><small th:text="${v.email} + ' · 회원 #' + ${v.id} + ' · 관리자 권한을 가져서는 안 되는 계정'">a***@x.com</small></span>
+            <form th:action="@{/admin/security/accounts/action}" method="post" th:unless="${v.self}">
+              <input type="hidden" name="action" value="revoke">
+              <input type="hidden" name="target" th:value="${v.id}">
+              <input type="hidden" name="reason" value="허용 목록 밖 관리자(과잉권한)">
+              <button class="row__action" type="submit">권한 회수</button>
+            </form>
+          </li>
+        </ul>
+        <p class="field__hint">허용 목록은 설정(<code>ADMIN_ALLOWLIST</code>)으로 바꿉니다. 마지막 관리자와 자기 자신의 권한은 회수할 수 없습니다.</p>
+      </section>
+
+      <section class="block block--gap" aria-labelledby="h-act">
+        <div class="block__head"><h2 id="h-act">계정 조치</h2></div>
+        <form class="filters" method="post" th:action="@{/admin/security/accounts/action}">
+          <div class="field">
+            <label for="target">회원 번호 또는 이메일</label>
+            <input id="target" name="target" type="text" required maxlength="254" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="action">조치</label>
+            <select id="action" name="action">
+              <option value="lock">계정 잠금</option>
+              <option value="unlock">잠금 해제</option>
+              <option value="revoke">관리자 권한 회수</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="reason">사유 <span class="optional">선택</span></label>
+            <input id="reason" name="reason" type="text" maxlength="200" autocomplete="off">
+          </div>
+          <button class="btn-solid" type="submit">실행</button>
+        </form>
+        <p class="field__hint">잠글 수 있는 계정은 자동 잠금 대상(합성 테스트 계정)뿐이고, 관리자 계정과 자기 자신은 잠글 수 없습니다.</p>
+      </section>
+
+      <section class="block block--gap" aria-labelledby="h-list">
+        <div class="block__head"><h2 id="h-list">회원 <span class="count" th:text="${total} + '명'">0명</span></h2></div>
+        <form class="filters filters--wrap" method="get" th:action="@{/admin/security/accounts}">
+          <div class="field">
+            <label for="q">검색</label>
+            <input id="q" name="q" type="search" th:value="${q}" maxlength="100" autocomplete="off" placeholder="닉네임·이메일">
+          </div>
+          <div class="field">
+            <label for="role">권한</label>
+            <select id="role" name="role">
+              <option value="all" th:selected="${role == 'all'}">전체</option>
+              <option value="USER" th:selected="${role == 'USER'}">일반</option>
+              <option value="ADMIN" th:selected="${role == 'ADMIN'}">관리자</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="status">상태</label>
+            <select id="status" name="status">
+              <option value="all" th:selected="${status == 'all'}">전체</option>
+              <option value="ACTIVE" th:selected="${status == 'ACTIVE'}">활성</option>
+              <option value="ANY_LOCKED" th:selected="${status == 'ANY_LOCKED'}">잠김(전체)</option>
+              <option value="LOCKED" th:selected="${status == 'LOCKED'}">잠김(관리자)</option>
+              <option value="AUTO" th:selected="${status == 'AUTO'}">잠김(로그인 실패)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="tier">등급</label>
+            <select id="tier" name="tier">
+              <option value="all" th:selected="${tier == 'all'}">전체</option>
+              <option th:each="t : ${tiers}" th:value="${t.name()}" th:selected="${tier == t.name()}" th:text="${t.name()}">VIP</option>
+            </select>
+          </div>
+          <button class="btn-solid" type="submit">조회</button>
+          <a class="btn-line" th:href="@{/admin/security/accounts}">초기화</a>
+        </form>
+        <p class="empty" th:if="${rows.isEmpty()}">조건에 맞는 회원이 없습니다.</p>
+        <table class="tx" th:unless="${rows.isEmpty()}">
+          <caption class="sr-only">회원 목록</caption>
+          <thead><tr><th scope="col">회원</th><th scope="col">권한</th><th scope="col">등급</th><th scope="col">상태</th><th scope="col"><span class="sr-only">조치</span></th></tr></thead>
+          <tbody>
+            <tr th:each="m : ${rows}">
+              <td data-label="회원"><strong th:text="${m.nickname}">닉네임</strong><small class="sub num-text" th:text="'#' + ${m.id} + ' · ' + ${m.email}">#1</small></td>
+              <td data-label="권한"><span class="tag" th:classappend="${m.overPrivileged} ? 'tag--high'" th:text="${m.role == 'ADMIN'} ? '관리자' : '일반'">일반</span></td>
+              <td data-label="등급" th:text="${m.tier}">STANDARD</td>
+              <td data-label="상태" th:text="${m.state}">활성</td>
+              <td data-label=""><div class="acts">
+                <form th:action="@{/admin/security/accounts/action}" method="post" th:if="${m.lockable}">
+                  <input type="hidden" name="action" value="lock"><input type="hidden" name="target" th:value="${m.id}">
+                  <button class="row__action" type="submit">잠금</button>
+                </form>
+                <form th:action="@{/admin/security/accounts/action}" method="post" th:if="${m.canUnlock}">
+                  <input type="hidden" name="action" value="unlock"><input type="hidden" name="target" th:value="${m.id}">
+                  <button class="row__action" type="submit">잠금 해제</button>
+                </form>
+                <form th:action="@{/admin/security/accounts/action}" method="post" th:if="${m.canRevoke}">
+                  <input type="hidden" name="action" value="revoke"><input type="hidden" name="target" th:value="${m.id}">
+                  <button class="row__action" type="submit">권한 회수</button>
+                </form>
+              </div></td>
+            </tr>
+          </tbody>
+        </table>
+        <div th:replace="~{fragments/pager :: pager(${pager})}"></div>
+      </section>
+    </div>
+  </div>
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

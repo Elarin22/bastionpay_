@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  헤더는 로고(왼쪽) · 중요 카테고리(가운데) · 사용자/인증(오른쪽) 3단 배치.
+  로그인 후에는 햄버거 버튼이 모든 항목을 카테고리별로 펼치는 "전체 메뉴"를 연다.
+-->
+<div th:fragment="header" class="site-top">
+  <header class="site-header">
+    <div class="wrap site-header__inner">
+      <a class="brand" th:href="${currentMember != null} ? @{/dashboard} : @{/}" aria-label="BastionPay 홈">
+        <svg class="brand__mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true" focusable="false"><path fill="currentColor" d="M5 28V8h5v4h3V8h6v4h3V8h5v20h-5v-8a6 6 0 0 0-12 0v8z"/></svg>
+        <span class="brand__name">BastionPay</span>
+      </a>
+
+      <!-- 로그인 전: 가운데 카테고리 + 오른쪽 로그인/회원가입. 좁은 화면에서는 햄버거 드롭다운 -->
+      <th:block th:if="${currentMember == null}">
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+          <span class="menu-toggle__label">메뉴</span>
+          <span class="menu-toggle__bars" aria-hidden="true"></span>
+        </button>
+        <nav class="site-nav" id="site-nav" aria-label="주요 메뉴">
+          <ul class="site-nav__list">
+            <li><a th:href="@{/#service}">서비스 소개</a></li>
+            <li><a th:href="@{/#features}">주요 기능</a></li>
+            <li><a th:href="@{/#start}">시작하기</a></li>
+          </ul>
+          <div class="site-nav__auth">
+            <a class="auth-link" th:href="@{/login}">로그인</a>
+            <a class="auth-link auth-link--strong" th:href="@{/signup}">회원가입</a>
+          </div>
+        </nav>
+      </th:block>
+
+      <!-- 로그인 후: 가운데 중요 카테고리 + 오른쪽 사용자 + 전체 메뉴 버튼 -->
+      <th:block th:if="${currentMember != null}">
+        <nav class="site-nav-center" aria-label="주요 메뉴">
+          <ul class="site-nav__list">
+            <li><a th:href="@{/dashboard}" th:classappend="${activeNav == 'dashboard'} ? 'is-active'" th:attr="aria-current=${activeNav == 'dashboard'} ? 'page'">대시보드</a></li>
+            <li><a th:href="@{/transfer}" th:classappend="${activeNav == 'transfer'} ? 'is-active'" th:attr="aria-current=${activeNav == 'transfer'} ? 'page'">이체</a></li>
+            <li><a th:href="@{/transactions}" th:classappend="${activeNav == 'transactions'} ? 'is-active'" th:attr="aria-current=${activeNav == 'transactions'} ? 'page'">거래내역</a></li>
+            <li th:if="${currentMember.role == 'ADMIN'}"><a th:href="@{/admin/security}" th:classappend="${activeNav == 'admin'} ? 'is-active'" th:attr="aria-current=${activeNav == 'admin'} ? 'page'">보안</a></li>
+          </ul>
+        </nav>
+        <div class="site-actions">
+          <!-- 로그인 유지 타이머(글자 라벨 없이 시간과 연장 버튼만 보인다; 설명은 title·aria-label). 마지막 활동 후 30분이 지나면 로그아웃된다. 화면을 이동하면 자동으로 처음부터 다시 센다 -->
+          <form class="session" th:if="${sessionRemaining != null}" th:action="@{/session/extend}" method="post"
+                data-session-remaining="1800" th:attr="data-session-remaining=${sessionRemaining}" data-status-url="/session/status" th:data-status-url="@{/session/status}"
+                data-login-url="/login?expired" th:data-login-url="@{/login(expired=true)}">
+            <span class="session__time num-text" role="timer" aria-label="자동 로그아웃까지 남은 시간" title="자동 로그아웃까지 남은 시간"><span data-session-time>30:00</span></span>
+            <button class="session__extend" type="submit">연장</button>
+            <span class="sr-only" role="status" aria-live="polite" data-session-announce></span>
+          </form>
+          <span class="auth-user"><strong th:text="${currentMember.nickname}">닉네임</strong>님</span>
+          <form class="auth-form" th:action="@{/logout}" method="post">
+            <button class="auth-link auth-link--button" type="submit">로그아웃</button>
+          </form>
+          <button class="menu-toggle menu-toggle--mega" type="button" aria-expanded="false" aria-controls="mega-menu" aria-label="전체 메뉴">
+            <span class="menu-toggle__bars" aria-hidden="true"></span>
+          </button>
+        </div>
+      </th:block>
+    </div>
+
+    <!-- 전체 메뉴: 모든 항목을 카테고리별로 보여 준다 (app.js 가 열고 닫는다) -->
+    <div class="mega" id="mega-menu" th:if="${currentMember != null}" hidden>
+      <div class="wrap mega__inner">
+        <section class="mega__group" aria-labelledby="mega-use">
+          <h2 class="mega__title" id="mega-use">이용</h2>
+          <ul class="mega__list">
+            <li><a th:href="@{/dashboard}" th:attr="aria-current=${activeNav == 'dashboard'} ? 'page'"><span class="mega__name">대시보드</span><span class="mega__desc">자산 현황 한눈에 보기</span></a></li>
+            <li><a th:href="@{/transfer}" th:attr="aria-current=${activeNav == 'transfer'} ? 'page'"><span class="mega__name">이체</span><span class="mega__desc">입력, 확인, 완료 3단계</span></a></li>
+            <li><a th:href="@{/transactions}" th:attr="aria-current=${activeNav == 'transactions'} ? 'page'"><span class="mega__name">거래내역</span><span class="mega__desc">전체 계좌 입출금 조회</span></a></li>
+          </ul>
+        </section>
+        <section class="mega__group" aria-labelledby="mega-assets">
+          <h2 class="mega__title" id="mega-assets">자산</h2>
+          <ul class="mega__list">
+            <li><a th:href="@{/accounts}" th:attr="aria-current=${activeNav == 'accounts'} ? 'page'"><span class="mega__name">입출금 계좌</span><span class="mega__desc">연동 계좌 잔액과 거래내역</span></a></li>
+          </ul>
+        </section>
+        <section class="mega__group" aria-labelledby="mega-connect">
+          <h2 class="mega__title" id="mega-connect">연결</h2>
+          <ul class="mega__list">
+            <li><a th:href="@{/connect}" th:attr="aria-current=${activeNav == 'connect'} ? 'page'"><span class="mega__name">오픈뱅킹 연결</span><span class="mega__desc">다른 은행 계좌 연결하기</span></a></li>
+          </ul>
+        </section>
+        <section class="mega__group" aria-labelledby="mega-admin" th:if="${currentMember.role == 'ADMIN'}">
+          <h2 class="mega__title" id="mega-admin">관리</h2>
+          <ul class="mega__list">
+            <li><a th:href="@{/admin/security}" th:attr="aria-current=${activeNav == 'admin'} ? 'page'"><span class="mega__name">보안 대시보드</span><span class="mega__desc">보안 이벤트·잠긴 계정·검토 이체</span></a></li>
+          </ul>
+        </section>
+        <div class="mega__foot">
+          <span class="auth-user"><strong th:text="${currentMember.nickname}">닉네임</strong>님</span>
+          <form class="auth-form" th:action="@{/logout}" method="post">
+            <button class="auth-link auth-link--button" type="submit">로그아웃</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </header>
+</div>
+</body>
+</html>

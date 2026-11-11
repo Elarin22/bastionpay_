@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title, extraCss)">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title th:text="${title} + ' · BastionPay'">BastionPay</title>
+  <link rel="icon" type="image/svg+xml" th:href="@{/img/favicon.svg}">
+  <link rel="stylesheet" th:href="@{/css/app.css}">
+  <th:block th:if="${extraCss}">
+    <link rel="stylesheet" th:each="css : ${#strings.listSplit(extraCss, ',')}" th:href="@{'/css/' + ${css} + '.css'}">
+  </th:block>
+  <script th:src="@{/js/app.js}" defer></script>
+</head>
+<body></body>
+</html>

@@ -1,0 +1,23 @@
+# 가짜 오픈뱅킹(mock-openbanking) 전용 MySQL. BastionPay 의 docker/docker-compose.yml 과 별개의 서버다.
+# 비밀번호는 같은 폴더의 .env 에서 읽는다 (.env.example 참고). 값이 없으면 기동되지 않는다.
+services:
+  mockbank-mysql:
+    image: mysql:8.0
+    container_name: mockbank-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MOCKBANK_DB_ROOT_PASSWORD:?.env 에 MOCKBANK_DB_ROOT_PASSWORD 를 넣어 주세요}
+      MYSQL_DATABASE: mockbank_db
+      MOCKBANK_DB_PASSWORD: ${MOCKBANK_DB_PASSWORD:?.env 에 MOCKBANK_DB_PASSWORD 를 넣어 주세요}
+      MOCKBANK_DB_MIGRATION_PASSWORD: ${MOCKBANK_DB_MIGRATION_PASSWORD:?.env 에 MOCKBANK_DB_MIGRATION_PASSWORD 를 넣어 주세요}
+    ports:
+      - "127.0.0.1:3307:3306"   # 이 PC 에서만 접속. BastionPay 의 MySQL(3306)과 포트가 겹치지 않는다
+    volumes:
+      - mockbank_mysql_data:/var/lib/mysql
+      - ./init:/docker-entrypoint-initdb.d:ro
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+
+volumes:
+  mockbank_mysql_data:

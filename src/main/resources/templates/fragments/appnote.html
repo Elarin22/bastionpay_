@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 예시 데이터 화면임을 모든 로그인 후 화면에 고지한다 -->
+<div th:fragment="note" th:unless="${hideSampleNote}" class="app-note" role="note">
+  <div class="wrap">화면 구성 확인용 예시 데이터입니다. 실제 계좌·거래와 연결되어 있지 않으며, 입력한 값은 저장되지 않습니다.</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,37 @@
+# Mac 개발 환경 (로컬 Docker MySQL)
+server:
+  ssl:
+    # 오픈뱅킹 콜백(https://localhost:8080)용 자체 서명 인증서. 파일은 gitignore(*.p12) 대상이라 직접 생성한다.
+    # 생성하지 않고 http로 띄우려면 DEV_HTTPS=false
+    enabled: ${DEV_HTTPS:true}
+    key-store: file:./config/local-dev.p12
+    key-store-type: PKCS12
+    key-store-password: changeit   # localhost 전용 인증서라 비밀이 아니다
+    key-alias: bastionpay-local
+
+spring:
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/bastionpay_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:bastionpay_app}
+    password: ${DB_PASSWORD}
+    hikari:
+      leak-detection-threshold: 20000   # 개발 중 커넥션 누수 탐지
+  flyway:
+    user: ${DB_MIGRATION_USERNAME:bastionpay_migrator}   # DDL 권한 계정 분리
+    password: ${DB_MIGRATION_PASSWORD}
+  jpa:
+    show-sql: false
+  thymeleaf:
+    cache: false
+
+logging:
+  level:
+    com.san.bastionpay: DEBUG
+    com.zaxxer.hikari: INFO
+
+app:
+  mail:
+    log-code: true            # SMTP 미설정 시 인증 코드를 콘솔에서 확인 (dev 전용)
+  jwt:
+    cookie:
+      secure: false           # http://localhost 에서도 쿠키 동작 (HTTPS 적용 후 true)

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('집계', 'app-ui,auth')}"></head>
+<body>
+<a class="skip-link" href="#main">본문 바로가기</a>
+<div th:replace="~{fragments/header :: header}"></div>
+<main id="main" class="app">
+  <div class="wrap">
+    <div class="app__inner app__inner--wide">
+      <div class="app__head">
+        <h1>보안 관리</h1>
+        <p>같은 종류의 이벤트를 IP·로그인 계정·회원별로 많은 순으로 봅니다. 10건씩 나눠 보여 줍니다.</p>
+      </div>
+      <div th:replace="~{admin/tabs :: tabs(${tab})}"></div>
+
+      <section class="block" aria-labelledby="h-st">
+        <div class="block__head"><h2 id="h-st">집계 <span class="count" th:text="${result.total} + '개 묶음'">0개 묶음</span></h2></div>
+        <form class="filters filters--wrap" method="get" th:action="@{/admin/security/stats}">
+          <div class="field">
+            <label for="range">기간</label>
+            <select id="range" name="range">
+              <option th:each="r : ${ranges}" th:value="${r.code()}" th:selected="${range == r.code()}" th:text="${r.label()}">24시간</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="by">기준</label>
+            <select id="by" name="by">
+              <option value="ip" th:selected="${by == 'ip'}">출발지 IP별</option>
+              <option value="account" th:selected="${by == 'account'}">로그인 계정별</option>
+              <option value="member" th:selected="${by == 'member'}">회원별</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="type">이벤트 종류</label>
+            <select id="type" name="type">
+              <optgroup th:each="c : ${categories}" th:label="${c.label()}">
+                <option th:each="t : ${c.types()}" th:value="${t.name()}" th:selected="${type == t.name()}" th:text="${t.name()}">LOGIN_FAILURE</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="field field--narrow">
+            <label for="min">최소 횟수</label>
+            <input id="min" name="min" type="number" min="1" th:value="${min}">
+          </div>
+          <button class="btn-solid" type="submit">조회</button>
+          <a class="btn-line" th:href="@{/admin/security/stats}">초기화</a>
+        </form>
+        <p class="field__hint" th:if="${by == 'account'}">로그인 계정별 집계는 이메일 원문이 아니라 서버 키로 만든 식별값으로 셉니다. 로그인 시도가 있는 이벤트(로그인 실패·성공, 계정 잠금)에서만 값이 있습니다.</p>
+        <p class="empty" th:if="${result.rows.isEmpty()}">조건에 맞는 집계가 없습니다. 기간을 늘리거나 최소 횟수를 낮춰 보세요.</p>
+        <table class="tx" th:unless="${result.rows.isEmpty()}">
+          <caption class="sr-only">이벤트 집계</caption>
+          <thead><tr><th scope="col" th:text="${by == 'ip' ? '출발지 IP' : by == 'account' ? '로그인 계정' : '회원'}">대상</th><th scope="col" class="num">횟수</th><th scope="col">마지막 발생(KST)</th><th scope="col"><span class="sr-only">조치</span></th></tr></thead>
+          <tbody>
+            <tr th:each="g : ${result.rows}">
+              <td data-label="대상"><strong th:classappend="${by == 'ip'} ? 'num-text'" th:text="${g.label}">203.0.113.9</strong><small class="sub num-text" th:if="${g.detail}" th:text="${g.detail}">식별값</small></td>
+              <td class="num amount" data-label="횟수" th:text="${g.count} + '회'">0회</td>
+              <td class="tx__date" data-label="마지막 발생" th:text="${g.last}">10.21 16:00:00</td>
+              <td data-label="">
+                <div class="acts" th:if="${by == 'ip'}">
+                  <form th:action="@{/admin/security/tickets}" method="post"><input type="hidden" name="ip" th:value="${g.key}"><button class="row__action" type="submit">티켓</button></form>
+                  <form th:action="@{/admin/security/blocked-ips}" method="post"><input type="hidden" name="ip" th:value="${g.key}"><input type="hidden" name="reason" th:value="${type + ' 다수'}"><button class="row__action" type="submit">차단</button></form>
+                  <a class="row__action" th:href="@{/admin/security/events(ip=${g.key}, type=${type}, range=${range})}">이벤트</a>
+                </div>
+                <div class="acts" th:if="${by == 'member'}">
+                  <a class="row__action" th:href="@{/admin/security/events(member=${g.key}, type=${type}, range=${range})}">이벤트</a>
+                  <a class="row__action" th:href="@{/admin/security/accounts(q=${g.key})}">계정</a>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div th:replace="~{fragments/pager :: pager(${pager})}"></div>
+      </section>
+    </div>
+  </div>
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>
